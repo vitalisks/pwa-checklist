@@ -1,0 +1,21 @@
+.cl-item {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 10px 10px;
+  cursor: pointer;
+  transition: background 0.12s var(--ease-out), border-color 0.12s var(--ease-out), opacity 0.2s var(--ease-out);
+}
+
+.cl-item:hover {
+  background: var(--surface-3);
+  border-color: var(--border-hover);
+}
+
+.cl-item-checked {
+  opacity: 0.55;
+}
+
+.cl-item-skipped {
+  border-color: rgba(212, 168, 75, 0.2);
+}

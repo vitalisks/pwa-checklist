@@ -19,6 +19,8 @@ const App: React.FC = () => {
     editingTemplate,
     saveTemplate,
     deleteTemplate,
+    addTemplatePhoto,
+    deleteTemplatePhoto,
     startEditing,
     cancelEditing,
   } = useTemplates();
@@ -28,8 +30,11 @@ const App: React.FC = () => {
     viewingChecklist,
     createChecklist,
     updateChecklist,
+    updateChecklistTitle,
     deleteChecklist,
     toggleItem,
+    addChecklistPhoto,
+    deleteChecklistPhoto,
     openChecklist,
     closeChecklist,
   } = useChecklists();
@@ -51,7 +56,10 @@ const App: React.FC = () => {
       return (
         <ChecklistView
           checklist={viewingChecklist}
+          onUpdateTitle={updateChecklistTitle}
           onToggleItem={toggleItem}
+          onAddPhoto={addChecklistPhoto}
+          onDeletePhoto={deleteChecklistPhoto}
           onDelete={deleteChecklist}
           onBack={closeChecklist}
         />
@@ -64,6 +72,8 @@ const App: React.FC = () => {
           template={editingTemplate || undefined}
           onSave={saveTemplate}
           onCancel={cancelEditing}
+          onAddPhoto={addTemplatePhoto}
+          onDeletePhoto={deleteTemplatePhoto}
         />
       );
     }
@@ -97,7 +107,7 @@ const App: React.FC = () => {
       case 'settings':
         return <SettingsView onClearData={handleClearData} />;
       default:
-        return <div>Select a tab</div>;
+        return null;
     }
   };
 
@@ -111,10 +121,10 @@ const App: React.FC = () => {
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab + (editingTemplate !== undefined ? '-editing' : '') + (viewingChecklist ? '-viewing' : '')}
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
-          transition={{ duration: 0.2 }}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
         >
           {renderContent()}
         </motion.div>

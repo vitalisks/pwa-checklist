@@ -1,10 +1,11 @@
-import { Template, Checklist } from '../types';
+import { Template, Checklist, ChecklistPhoto } from '../types';
 
 const DB_NAME = 'CheckFlowDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORES = {
     TEMPLATES: 'templates',
     CHECKLISTS: 'checklists',
+    PHOTOS: 'photos',
 };
 
 class IndexedDBStorage {
@@ -28,12 +29,14 @@ class IndexedDBStorage {
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
 
-                // Create object stores if they don't exist
                 if (!db.objectStoreNames.contains(STORES.TEMPLATES)) {
                     db.createObjectStore(STORES.TEMPLATES, { keyPath: 'id' });
                 }
                 if (!db.objectStoreNames.contains(STORES.CHECKLISTS)) {
                     db.createObjectStore(STORES.CHECKLISTS, { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains(STORES.PHOTOS)) {
+                    db.createObjectStore(STORES.PHOTOS, { keyPath: 'itemId' });
                 }
             };
         });
@@ -149,11 +152,40 @@ class IndexedDBStorage {
         return this.clear(STORES.CHECKLISTS);
     }
 
+    // Photos
+    async getPhoto(itemId: string): Promise<ChecklistPhoto | undefined> {
+        const db = await this.ensureDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORES.PHOTOS, 'readonly');
+            const store = transaction.objectStore(STORES.PHOTOS);
+            const request = store.get(itemId);
+            request.onsuccess = () => resolve(request.result || undefined);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getPhotosByPrefix(prefix: string): Promise<ChecklistPhoto[]> {
+        const all = await this.getAll<ChecklistPhoto>(STORES.PHOTOS);
+        return all.filter(p => p.itemId.startsWith(prefix));
+    }
+
+    async setPhoto(photo: ChecklistPhoto): Promise<void> {
+        return this.put(STORES.PHOTOS, photo);
+    }
+
+    async deletePhoto(itemId: string): Promise<void> {
+        return this.delete(STORES.PHOTOS, itemId);
+    }
+
+    async clearPhotos(): Promise<void> {
+        return this.clear(STORES.PHOTOS);
+    }
+
     async clearAll(): Promise<void> {
         await this.clearTemplates();
         await this.clearChecklists();
+        await this.clearPhotos();
     }
 }
 
-// Export singleton instance
 export const storageService = new IndexedDBStorage();

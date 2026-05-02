@@ -1,0 +1,9 @@
+.section-sticky {
+  position: sticky;
+  top: 60px;
+  z-index: 5;
+  background: var(--canvas);
+  padding: 8px 4px;
+  margin: -8px -4px 0;
+  border-bottom: 1px solid var(--border-default);
+}

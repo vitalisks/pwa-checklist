@@ -13,8 +13,8 @@ export default defineConfig({
                 name: 'CheckFlow PWA',
                 short_name: 'CheckFlow',
                 description: 'A premium offline checklist manager',
-                theme_color: '#050a08',
-                background_color: '#050a08',
+                theme_color: '#1f1f1d',
+                background_color: '#1f1f1d',
                 display: 'standalone',
                 icons: [
                     {

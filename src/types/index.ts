@@ -1,6 +1,8 @@
 export interface TemplateItem {
   id: string;
   text: string;
+  description?: string;
+  photoIds?: string[];
 }
 
 export interface Category {
@@ -20,8 +22,17 @@ export interface Template {
 export interface ChecklistItem {
   id: string;
   text: string;
+  description?: string;
   checked: boolean;
   skipped?: boolean;
+  photoIds?: string[];
+  guidePhotoIds?: string[];
+}
+
+export interface ChecklistPhoto {
+  itemId: string;
+  dataUrl: string;
+  updatedAt: number;
 }
 
 export interface ChecklistCategory {
@@ -35,6 +46,7 @@ export type ChecklistStatus = 'active' | 'completed';
 export interface Checklist {
   id: string;
   templateId: string;
+  templateTitle?: string;
   title: string;
   categories: ChecklistCategory[];
   status: ChecklistStatus;

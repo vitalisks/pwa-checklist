@@ -1,0 +1,15 @@
+.editor-item {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  transition: border-color 0.12s var(--ease-out);
+}
+
+.editor-item:hover {
+  border-color: var(--border-default);
+}
+
+.editor-item-invalid {
+  border-color: var(--danger);
+}

@@ -10,6 +10,7 @@ export default {
     home_active_checklists: 'Активные Списки',
     home_no_matches: 'Нет совпадений для',
     home_no_templates: 'Нет шаблонов.',
+  home_no_checklists: 'Нет списков.',
     home_add_template: 'Добавить Шаблон',
 
     // Template List
@@ -25,13 +26,16 @@ export default {
     editor_edit: 'Редактировать Шаблон',
     editor_cancel: 'Отмена',
     editor_save: 'Сохранить',
-    editor_title_placeholder: 'Название Шаблона',
-    editor_desc_placeholder: 'Описание (необязательно)',
+  editor_title_placeholder: 'Название Шаблона',
+  editor_title_placeholder_required: 'Название Шаблона *',
+  editor_desc_placeholder: 'Описание (необязательно)',
     editor_cats_items_label: 'Категории и Элементы',
     editor_add_cat: 'Добавить Категорию',
-    editor_cat_placeholder: 'Название Категории',
-    editor_item_placeholder: 'Текст элемента...',
+  editor_cat_placeholder: 'Название Категории *',
+  editor_item_placeholder: 'Текст элемента *',
     editor_add_item: 'Добавить Элемент',
+    editor_item_desc: 'Описание',
+    editor_item_desc_placeholder: 'Как выполнить этот элемент...',
 
     // Checklist View
     checklist_complete: 'Список Завершён!',
@@ -39,6 +43,11 @@ export default {
     checklist_back: 'Вернуться к Списку',
     checklist_skip: 'Пропустить',
     checklist_item_skipped: 'Элемент Пропущен',
+    checklist_edit_title: 'Редактировать название',
+    checklist_title_placeholder: 'Введите название списка...',
+    checklist_from_template: 'Из шаблона',
+    common_save: 'Сохранить',
+    common_cancel: 'Отмена',
 
     // Settings
     settings_title: 'Настройки',
@@ -50,5 +59,23 @@ export default {
     // Common
     find_placeholder: 'Найти...',
     delete_confirm: 'Вы уверены?',
+  delete_confirm_title: 'Удалить',
+  delete_confirm_msg: 'Это действие нельзя отменить. Вы уверены, что хотите удалить?',
+  delete_confirm_action: 'Удалить',
+  action_cancel: 'Отмена',
     done: 'Готово',
+  item_add_photo: 'Добавить Фото',
+  item_delete_photo: 'Удалить Фото',
+  item_guide_photo: 'Руководство',
+  item_guide_photo_badge: 'Руководство',
+  item_your_photo: 'Ваше Фото',
+  item_photos: 'Фотографии',
+  item_no_photos: 'Пока нет фото',
+
+  // Validation
+  validation_required_title: 'Обязательные поля не заполнены',
+  validation_title_required: 'Название шаблона обязательно.',
+  validation_category_name_required: 'Названия всех категорий обязательны.',
+  validation_item_name_required: 'Названия всех элементов обязательны.',
+  action_ok: 'ОК',
 };

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Checklist, Template } from '../types';
+import { Checklist, Template, ChecklistPhoto } from '../types';
 import { storageService } from '../services/storage';
 import { generateUUID } from '../utils/uuid';
+import { compressImage } from '../utils/image';
 
 export const useChecklists = () => {
     const [checklists, setChecklists] = useState<Checklist[]>([]);
@@ -27,7 +28,8 @@ export const useChecklists = () => {
             const newChecklist: Checklist = {
                 id: generateUUID(),
                 templateId: template.id,
-                title: template.title,
+                templateTitle: template.title,
+                title: '',
                 status: 'active',
                 createdAt: Date.now(),
                 metadata: template.description,
@@ -37,8 +39,11 @@ export const useChecklists = () => {
                     items: cat.items.map((i) => ({
                         id: i.id,
                         text: i.text,
+                        description: i.description || '',
                         checked: false,
                         skipped: false,
+                        photoIds: [],
+                        guidePhotoIds: i.photoIds || [],
                     })),
                 })),
             };
@@ -66,8 +71,33 @@ export const useChecklists = () => {
         }
     };
 
+    const updateChecklistTitle = async (checklist: Checklist, newTitle: string) => {
+        const updated = { ...checklist, title: newTitle };
+        try {
+            await storageService.updateChecklist(updated);
+            setChecklists(checklists.map((c) => (c.id === checklist.id ? updated : c)));
+
+            if (viewingChecklist?.id === checklist.id) {
+                setViewingChecklist(updated);
+            }
+        } catch (error) {
+            console.error('Failed to update checklist title:', error);
+        }
+    };
+
     const deleteChecklist = async (id: string) => {
         try {
+            const checklist = checklists.find(c => c.id === id);
+            if (checklist) {
+                for (const cat of checklist.categories) {
+                    for (const item of cat.items) {
+                        for (const photoId of item.photoIds || []) {
+                            await storageService.deletePhoto(photoId);
+                        }
+                    }
+                }
+            }
+
             await storageService.deleteChecklist(id);
             setChecklists(checklists.filter((c) => c.id !== id));
 
@@ -118,6 +148,59 @@ export const useChecklists = () => {
         updateChecklist(updatedChecklist);
     };
 
+    const addChecklistPhoto = async (checklist: Checklist, categoryId: string, itemId: string, file: File) => {
+        try {
+            const photoId = `cl_${itemId}_${generateUUID()}`;
+            const dataUrl = await compressImage(file);
+            const photo: ChecklistPhoto = { itemId: photoId, dataUrl, updatedAt: Date.now() };
+            await storageService.setPhoto(photo);
+
+            const newCategories = checklist.categories.map(cat => {
+                if (cat.id === categoryId) {
+                    return {
+                        ...cat,
+                        items: cat.items.map(item =>
+                            item.id === itemId
+                                ? { ...item, photoIds: [...(item.photoIds || []), photoId] }
+                                : item
+                        )
+                    };
+                }
+                return cat;
+            });
+
+            const updatedChecklist = { ...checklist, categories: newCategories };
+            await updateChecklist(updatedChecklist);
+        } catch (error) {
+            console.error('Failed to save photo:', error);
+        }
+    };
+
+    const deleteChecklistPhoto = async (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => {
+        try {
+            await storageService.deletePhoto(photoId);
+
+            const newCategories = checklist.categories.map(cat => {
+                if (cat.id === categoryId) {
+                    return {
+                        ...cat,
+                        items: cat.items.map(item =>
+                            item.id === itemId
+                                ? { ...item, photoIds: (item.photoIds || []).filter(id => id !== photoId) }
+                                : item
+                        )
+                    };
+                }
+                return cat;
+            });
+
+            const updatedChecklist = { ...checklist, categories: newCategories };
+            await updateChecklist(updatedChecklist);
+        } catch (error) {
+            console.error('Failed to delete photo:', error);
+        }
+    };
+
     const openChecklist = (checklist: Checklist) => setViewingChecklist(checklist);
     const closeChecklist = () => setViewingChecklist(null);
 
@@ -127,8 +210,11 @@ export const useChecklists = () => {
         loading,
         createChecklist,
         updateChecklist,
+        updateChecklistTitle,
         deleteChecklist,
         toggleItem,
+        addChecklistPhoto,
+        deleteChecklistPhoto,
         openChecklist,
         closeChecklist,
     };
