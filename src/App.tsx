@@ -69,6 +69,14 @@ const App: React.FC = () => {
     window.location.reload();
   }, []);
 
+  const handleExport = useCallback(async () => {
+    await storageService.exportAll();
+  }, []);
+
+  const handleImport = useCallback(async (file: File) => {
+    return storageService.importMerge(file);
+  }, []);
+
   const memoizedContent = useMemo(() => {
     if (viewingChecklist) {
       return (
@@ -134,7 +142,13 @@ const App: React.FC = () => {
           />
         );
       case 'settings':
-        return <SettingsView onClearData={handleClearData} />;
+        return (
+          <SettingsView
+            onClearData={handleClearData}
+            onExport={handleExport}
+            onImport={handleImport}
+          />
+        );
       default:
         return null;
     }

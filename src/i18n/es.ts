@@ -49,6 +49,10 @@ export default {
   settings_language: 'Idioma',
   settings_clear_data: 'Borrar Todos los Datos',
   settings_clear_warning: '¿Estás seguro de que quieres borrar todos los datos? Esta acción no se puede deshacer.',
+  settings_data: 'Datos',
+  settings_export: 'Exportar datos',
+  settings_import: 'Importar datos',
+  settings_import_error: 'Error al importar — archivo de copia de seguridad no válido.',
 
   find_placeholder: 'Buscar...',
   delete_confirm: '¿Estás seguro?',

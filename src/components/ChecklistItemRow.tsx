@@ -39,6 +39,9 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   const captureIds = item.photoIds || [];
   const hasGuides = guideIds.length > 0;
   const hasCaptures = captureIds.length > 0;
+  const imageLinks = item.imageLinks || [];
+  const [brokenLinks, setBrokenLinks] = useState<Set<string>>(new Set());
+  const hasImageLinks = imageLinks.length > 0;
 
   useEffect(() => {
     if (guideIds.length === 0) { setGuideThumbs({}); return; }
@@ -97,7 +100,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
     }
   };
 
-  const allPhotoIds = [...guideIds, ...captureIds];
+  const allPhotoIds = [...guideIds, ...imageLinks, ...captureIds];
 
   return (
     <motion.div
@@ -187,7 +190,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
         </div>
       )}
 
-      {(hasGuides || hasCaptures) && (
+      {(hasGuides || hasImageLinks || hasCaptures) && (
         <div className={photoStyles['photo-zone']} onClick={(e) => e.stopPropagation()}>
           {hasGuides && (
             <div>
@@ -215,14 +218,45 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               </div>
             </div>
           )}
-          {hasCaptures && (
+          {hasImageLinks && (
             <div className={hasGuides ? 'mt-2' : ''}>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <div className={photoStyles['photo-zone-label']}>AI</div>
+              </div>
+              <div className={photoStyles['photo-strip']}>
+                {imageLinks.map((url, i) => (
+                  <div key={`${url}-${i}`} className={photoStyles['photo-thumb-wrap']}>
+                    {brokenLinks.has(url) ? (
+                      <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']} ${photoStyles['photo-thumb-guide']}`}>
+                        <Image size={12} />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => onViewPhotos(allPhotoIds, guideIds.length + i)}
+                        className={photoStyles['guide-photo-btn']}
+                      >
+                        <img
+                          src={url}
+                          alt="ai reference"
+                          className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`}
+                          onError={() => setBrokenLinks((prev) => new Set(prev).add(url))}
+                        />
+                        <span className={photoStyles['ai-badge']}>AI</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {hasCaptures && (
+            <div className={(hasGuides || hasImageLinks) ? 'mt-2' : ''}>
               <div className={photoStyles['photo-zone-label']}>{t('item_your_photo')}</div>
               <div className={photoStyles['photo-strip']}>
                 {captureIds.map((pid, i) => (
                   <div key={pid} className={photoStyles['photo-thumb-wrap']}>
                     {captureThumbs[pid] ? (
-                      <button onClick={() => onViewPhotos(allPhotoIds, guideIds.length + i)}>
+                      <button onClick={() => onViewPhotos(allPhotoIds, guideIds.length + imageLinks.length + i)}>
                         <img src={captureThumbs[pid]} alt="capture" className={photoStyles['photo-thumb']} />
                       </button>
                     ) : (

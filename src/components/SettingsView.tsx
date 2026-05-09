@@ -1,19 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Download, Upload } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
+import { ImportResult } from '../services/storage';
 
 interface SettingsViewProps {
   onClearData: () => void;
+  onExport: () => Promise<void>;
+  onImport: (file: File) => Promise<ImportResult>;
 }
 
-const SettingsView: React.FC<SettingsViewProps> = ({ onClearData }) => {
+const SettingsView: React.FC<SettingsViewProps> = ({ onClearData, onExport, onImport }) => {
   const { language, setLanguage, t } = useLanguage();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<{ text: string; error: boolean } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClear = () => {
     onClearData();
     setShowClearConfirm(false);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await onExport();
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImporting(true);
+    setImportMessage(null);
+    try {
+      const result = await onImport(file);
+      const { templates, checklists, photos } = result.added;
+      const msg = `Added ${templates} templates, ${checklists} checklists, ${photos} photos. Skipped ${result.skipped}.`;
+      setImportMessage({ text: msg, error: false });
+      setTimeout(() => window.location.reload(), 1500);
+    } catch {
+      setImportMessage({ text: t('settings_import_error'), error: true });
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -40,8 +75,45 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onClearData }) => {
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="pt-4 border-t border-subtle">
+      <div className="card space-y-3">
+        <h3 className="text-sm font-semibold">{t('settings_data')}</h3>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        <div className="flex gap-2">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="btn btn-soft flex-1"
+          >
+            <Download size={16} />
+            {exporting ? '…' : t('settings_export')}
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="btn btn-soft flex-1"
+          >
+            <Upload size={16} />
+            {importing ? '…' : t('settings_import')}
+          </button>
+        </div>
+
+        {importMessage && (
+          <p className={`text-xs ${importMessage.error ? 'text-danger' : 'text-accent'}`}>
+            {importMessage.text}
+          </p>
+        )}
+
+        <div className="pt-3 border-t border-subtle">
           <button
             onClick={() => setShowClearConfirm(true)}
             className="btn btn-danger w-full"

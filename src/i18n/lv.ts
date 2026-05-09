@@ -55,6 +55,10 @@ export default {
     settings_language: 'Valoda',
     settings_clear_data: 'Dzēst Visus Datus',
     settings_clear_warning: 'Vai tiešām vēlaties dzēst visus datus? To nevar atsaukt.',
+    settings_data: 'Dati',
+    settings_export: 'Eksportēt datus',
+    settings_import: 'Importēt datus',
+    settings_import_error: 'Importēšana neizdevās — nederīgs dublējuma fails.',
 
     // Common
     find_placeholder: 'Meklēt...',

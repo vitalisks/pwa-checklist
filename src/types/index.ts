@@ -3,6 +3,7 @@ export interface TemplateItem {
   text: string;
   description?: string;
   photoIds?: string[];
+  imageLinks?: string[];
 }
 
 export interface Category {
@@ -33,6 +34,7 @@ export interface ChecklistItem {
   skipped?: boolean;
   photoIds?: string[];
   guidePhotoIds?: string[];
+  imageLinks?: string[];
 }
 
 export interface ChecklistPhoto {

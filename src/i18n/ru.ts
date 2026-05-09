@@ -55,6 +55,10 @@ export default {
     settings_language: 'Язык',
     settings_clear_data: 'Очистить Все Данные',
     settings_clear_warning: 'Вы уверены, что хотите удалить все данные? Это действие нельзя отменить.',
+    settings_data: 'Данные',
+    settings_export: 'Экспорт данных',
+    settings_import: 'Импорт данных',
+    settings_import_error: 'Ошибка импорта — недопустимый файл резервной копии.',
 
     // Common
     find_placeholder: 'Найти...',

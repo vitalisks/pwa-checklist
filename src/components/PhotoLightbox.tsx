@@ -29,6 +29,13 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
     const load = async () => {
       setLoading(true);
       setIsZoomed(false);
+      if (currentId.startsWith('http://') || currentId.startsWith('https://')) {
+        if (!cancelled) {
+          setDataUrl(currentId);
+          setLoading(false);
+        }
+        return;
+      }
       const photo = await storageService.getPhoto(currentId);
       if (!cancelled) {
         setDataUrl(photo?.dataUrl || null);
@@ -102,7 +109,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
       onTouchEnd={handleTouchEnd}
     >
       <div className="absolute top-4 right-4 flex gap-3 z-10">
-        {onDelete && (
+        {onDelete && !photoIds[currentIndex]?.startsWith('http') && (
           <button
             onClick={(e) => { e.stopPropagation(); handleDeleteClick(); }}
             className={styles.btn}

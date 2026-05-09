@@ -89,6 +89,23 @@
   pointer-events: none;
 }
 
+.ai-badge {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-muted);
+  color: var(--canvas);
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .photo-thumb-delete {
   position: absolute;
   top: -5px;

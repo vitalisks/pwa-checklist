@@ -1,5 +1,10 @@
 import { Template, Checklist, ChecklistPhoto } from '../types';
 
+export interface ImportResult {
+    added: { templates: number; checklists: number; photos: number };
+    skipped: number;
+}
+
 const DB_NAME = 'CheckFlowDB';
 const DB_VERSION = 2;
 const STORES = {
@@ -181,10 +186,79 @@ class IndexedDBStorage {
         return this.clear(STORES.PHOTOS);
     }
 
+    async getAllPhotos(): Promise<ChecklistPhoto[]> {
+        return this.getAll<ChecklistPhoto>(STORES.PHOTOS);
+    }
+
     async clearAll(): Promise<void> {
         await this.clearTemplates();
         await this.clearChecklists();
         await this.clearPhotos();
+    }
+
+    async exportAll(): Promise<void> {
+        const [templates, checklists, photos] = await Promise.all([
+            this.getTemplates(),
+            this.getChecklists(),
+            this.getAllPhotos(),
+        ]);
+        const payload = JSON.stringify({ version: 1, exportedAt: Date.now(), templates, checklists, photos });
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const date = new Date().toISOString().slice(0, 10);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `checkflow-backup-${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    async importMerge(file: File): Promise<ImportResult> {
+        const text = await file.text();
+        let data: { version: number; templates: Template[]; checklists: Checklist[]; photos: ChecklistPhoto[] };
+        try {
+            data = JSON.parse(text);
+        } catch {
+            throw new Error('Invalid backup file');
+        }
+        if (
+            typeof data.version !== 'number' ||
+            !Array.isArray(data.templates) ||
+            !Array.isArray(data.checklists) ||
+            !Array.isArray(data.photos)
+        ) {
+            throw new Error('Invalid backup file');
+        }
+
+        const [existingTemplates, existingChecklists, existingPhotos] = await Promise.all([
+            this.getTemplates(),
+            this.getChecklists(),
+            this.getAllPhotos(),
+        ]);
+        const templateIds = new Set(existingTemplates.map(t => t.id));
+        const checklistIds = new Set(existingChecklists.map(c => c.id));
+        const photoIds = new Set(existingPhotos.map(p => p.itemId));
+
+        const result: ImportResult = { added: { templates: 0, checklists: 0, photos: 0 }, skipped: 0 };
+
+        for (const template of data.templates) {
+            if (templateIds.has(template.id)) { result.skipped++; continue; }
+            await this.addTemplate(template);
+            result.added.templates++;
+        }
+        for (const checklist of data.checklists) {
+            if (checklistIds.has(checklist.id)) { result.skipped++; continue; }
+            await this.addChecklist(checklist);
+            result.added.checklists++;
+        }
+        for (const photo of data.photos) {
+            if (photoIds.has(photo.itemId)) { result.skipped++; continue; }
+            await this.setPhoto(photo);
+            result.added.photos++;
+        }
+        return result;
     }
 }
 

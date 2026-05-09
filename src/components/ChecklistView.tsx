@@ -173,11 +173,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
             </h3>
             <div className="space-y-2">
               {category.items.map((item) => {
-                const allPhotoIds = [
-                  ...(item.guidePhotoIds || []),
-                  ...(item.photoIds || []),
-                ];
-                const guideCount = item.guidePhotoIds?.length || 0;
+                const guideCount = (item.guidePhotoIds?.length || 0) + (item.imageLinks?.length || 0);
 
                 return (
                   <ChecklistItemRow

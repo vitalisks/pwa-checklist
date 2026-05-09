@@ -55,6 +55,10 @@ export default {
     settings_language: 'Language',
     settings_clear_data: 'Clear All Data',
     settings_clear_warning: 'Are you sure you want to clear all data? This cannot be undone.',
+    settings_data: 'Data',
+    settings_export: 'Export Data',
+    settings_import: 'Import Data',
+    settings_import_error: 'Import failed — invalid backup file.',
 
     // Common
     find_placeholder: 'Find...',

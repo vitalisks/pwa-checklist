@@ -44,6 +44,7 @@ export const useChecklists = () => {
                         skipped: false,
                         photoIds: [],
                         guidePhotoIds: i.photoIds || [],
+                        imageLinks: i.imageLinks,
                     })),
                 })),
             };
