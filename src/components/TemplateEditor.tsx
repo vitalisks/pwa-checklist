@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Save, GripVertical, Trash2, X } from 'lucide-react';
+import { Plus, Save, GripVertical, Trash2, X, Image as ImageIcon } from 'lucide-react';
+import { storageService } from '../services/storage';
+import PhotoLightbox from './PhotoLightbox';
 import { Template, Category, TemplateItem } from '../types';
 import {
   DndContext,
@@ -27,6 +29,7 @@ import ConfirmDialog from './ConfirmDialog';
 
 import { useLanguage } from '../hooks/useLanguage';
 import { generateUUID } from '../utils/uuid';
+import photoStyles from '../styles/photo-zone.module.css';
 
 interface TemplateEditorProps {
   template?: Template;
@@ -85,14 +88,14 @@ function SortableCategory({
       style={style}
       className={`card ${isDragging ? 'z-50' : ''}`}
     >
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-1.5 mb-2">
         <button
           {...attributes}
           {...listeners}
           style={{ touchAction: 'none' }}
-          className="btn-icon cursor-grab active:cursor-grabbing text-tertiary hover:text-primary"
+          className="btn-icon w-6 h-6 cursor-grab active:cursor-grabbing text-tertiary hover:text-primary shrink-0"
         >
-          <GripVertical size={16} />
+          <GripVertical size={14} />
         </button>
         <input
           type="text"
@@ -107,13 +110,13 @@ function SortableCategory({
               onRemove(category.id);
             }
           }}
-          className="btn-icon btn-icon-danger shrink-0"
+          className="btn-icon w-6 h-6 btn-icon-danger shrink-0"
         >
-          <Trash2 size={16} />
+          <Trash2 size={14} />
         </button>
       </div>
 
-      <div className="space-y-2 pl-3 border-l border-subtle">
+      <div className="space-y-1.5 pl-2.5 border-l border-subtle">
         <SortableContext
           items={category.items.map(i => i.id)}
           strategy={verticalListSortingStrategy}
@@ -161,9 +164,38 @@ function SortableItem({
   onUpdateText,
   onUpdateDescription,
   onRemove,
+  onAddPhoto,
+  onDeletePhoto,
 }: SortableItemProps) {
   const { t } = useLanguage();
   const descRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const ids = item.photoIds || [];
+    if (ids.length === 0) { setThumbs({}); return; }
+    let cancelled = false;
+    const load = async () => {
+      const map: Record<string, string> = {};
+      for (const pid of ids) {
+        try {
+          const photo = await storageService.getPhoto(pid);
+          if (photo && !cancelled) map[pid] = photo.dataUrl;
+        } catch { /* ignore */ }
+      }
+      if (!cancelled) setThumbs(map);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [(item.photoIds || []).join(',')]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { onAddPhoto(categoryId, item.id, file); e.target.value = ''; }
+  };
+
   const {
     attributes,
     listeners,
@@ -186,18 +218,27 @@ function SortableItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const photoIds = item.photoIds || [];
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-surface-1 border border-subtle rounded px-2 py-1.5 transition-colors ${isDragging ? 'border-accent' : ''}`}
+      className={`bg-surface-1 border border-subtle rounded px-1.5 py-1 transition-colors ${isDragging ? 'border-accent' : ''}`}
     >
-      <div className="flex items-center gap-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <div className="flex items-center gap-1.5">
         <button
           {...attributes}
           {...listeners}
           style={{ touchAction: 'none' }}
-          className="btn-icon cursor-grab active:cursor-grabbing text-tertiary hover:text-primary p-1"
+          className="btn-icon w-5 h-5 cursor-grab active:cursor-grabbing text-tertiary hover:text-primary shrink-0"
         >
           <GripVertical size={12} />
         </button>
@@ -209,8 +250,15 @@ function SortableItem({
           placeholder={t('editor_item_placeholder')}
         />
         <button
+          onClick={() => fileInputRef.current?.click()}
+          className="btn-icon w-5 h-5 text-tertiary hover:text-accent shrink-0"
+          title={t('item_add_photo')}
+        >
+          <ImageIcon size={12} />
+        </button>
+        <button
           onClick={() => onRemove(categoryId, item.id)}
-          className="btn-icon btn-icon-danger p-1"
+          className="btn-icon w-5 h-5 btn-icon-danger shrink-0"
         >
           <X size={12} />
         </button>
@@ -218,11 +266,47 @@ function SortableItem({
       {item.description !== undefined && (
         <textarea
           ref={descRef}
-          className="input bg-transparent border-subtle mt-1 ml-6"
+          className="input bg-transparent border-subtle mt-1 ml-5"
           style={{ resize: 'none', overflow: 'hidden' }}
           value={item.description}
           onChange={(e) => onUpdateDescription(categoryId, item.id, e.target.value)}
           placeholder={t('editor_item_desc_placeholder')}
+        />
+      )}
+      {photoIds.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', marginLeft: '26px', paddingTop: '6px' }}>
+          {photoIds.map((pid, i) => (
+            <div key={pid} className={photoStyles['photo-thumb-wrap']}>
+              {thumbs[pid] ? (
+                <button onClick={() => setLightboxIndex(i)} className={photoStyles['guide-photo-btn']}>
+                  <img src={thumbs[pid]} alt="guide" className={photoStyles['photo-thumb']} />
+                </button>
+              ) : (
+                <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']}`}>
+                  <ImageIcon size={12} />
+                </div>
+              )}
+              <button
+                onClick={() => onDeletePhoto(categoryId, item.id, pid)}
+                className={photoStyles['photo-thumb-delete']}
+                title={t('item_delete_photo')}
+              >
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {lightboxIndex !== null && (
+        <PhotoLightbox
+          photoIds={photoIds}
+          startIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onDelete={(pid) => {
+            onDeletePhoto(categoryId, item.id, pid);
+            if (photoIds.length <= 1) setLightboxIndex(null);
+            else setLightboxIndex(Math.min(lightboxIndex, photoIds.length - 2));
+          }}
         />
       )}
     </div>
@@ -539,7 +623,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
       </div>
 
       <div className="mb-4">
-        <h3 className="section-label mb-3">{t('editor_cats_items_label')}</h3>
+        <h3 className="section-label mb-2">{t('editor_cats_items_label')}</h3>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -570,7 +654,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
               ))}
               <button
                 onClick={addCategory}
-                className="card border-dashed border-2 border-default hover:border-accent cursor-pointer flex items-center justify-center gap-2 py-3 text-tertiary hover:text-accent transition-colors h-12"
+                className="card border-dashed border-2 border-default hover:border-accent cursor-pointer flex items-center justify-center gap-2 text-tertiary hover:text-accent transition-colors h-10"
               >
                 <Plus size={16} />
                 <span className="text-sm font-medium">{t('editor_add_cat')}</span>

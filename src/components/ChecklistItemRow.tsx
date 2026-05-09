@@ -83,11 +83,11 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   }, [captureIds.join(',')]);
 
   useLayoutEffect(() => {
-    if (descRef.current && !descExpanded) {
-      setDescClamped(descRef.current.scrollHeight > descRef.current.clientHeight);
+    const el = descRef.current;
+    if (el && hasDescription && !descExpanded) {
+      setDescClamped(el.scrollHeight > el.clientHeight + 1);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.description]);
+  }, [item.description, descExpanded, hasDescription]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -137,24 +137,6 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
             <span className={`text-sm font-medium ${item.checked ? 'line-through text-secondary' : item.skipped ? 'italic text-secondary' : ''}`}>
               {item.text}
             </span>
-            {hasDescription && (
-              <div>
-                <p
-                  ref={descRef}
-                  className={`text-xs text-tertiary leading-relaxed mt-0.5${descExpanded ? '' : ' line-clamp-3'}`}
-                >
-                  {item.description}
-                </p>
-                {(descClamped || descExpanded) && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDescExpanded(!descExpanded); }}
-                    className="text-2xs text-accent mt-0.5 hover:underline"
-                  >
-                    {descExpanded ? t('see_less') : t('see_more')}
-                  </button>
-                )}
-              </div>
-            )}
             {item.skipped && (
               <span className="text-2xs text-warning font-semibold tracking-wide mt-0.5">
                 {t('checklist_item_skipped')}
@@ -185,6 +167,25 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
           </button>
         </div>
       </div>
+
+      {hasDescription && (
+        <div style={{ paddingLeft: '28px' }} className="mt-1">
+          <p
+            ref={descRef}
+            className={`text-sm text-secondary leading-relaxed${descExpanded ? '' : ' line-clamp-3'}`}
+          >
+            {item.description}
+          </p>
+          {(descClamped || descExpanded) && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setDescExpanded(!descExpanded); }}
+              className="text-2xs text-accent mt-0.5 hover:underline"
+            >
+              {descExpanded ? t('see_less') : t('see_more')}
+            </button>
+          )}
+        </div>
+      )}
 
       {(hasGuides || hasCaptures) && (
         <div className={photoStyles['photo-zone']} onClick={(e) => e.stopPropagation()}>

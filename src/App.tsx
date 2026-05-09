@@ -5,9 +5,11 @@ import TemplateEditor from './components/TemplateEditor';
 import ChecklistView from './components/ChecklistView';
 import HomeView from './components/HomeView';
 import SettingsView from './components/SettingsView';
+import IdeaFlowView from './components/IdeaFlowView';
 import { useTemplates } from './hooks/useTemplates';
 import { useChecklists } from './hooks/useChecklists';
 import { storageService } from './services/storage';
+import { Template } from './types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
@@ -39,10 +41,26 @@ const App: React.FC = () => {
     closeChecklist,
   } = useChecklists();
 
+  const [showIdeaFlow, setShowIdeaFlow] = useState(false);
+
+  const startIdeaFlow = useCallback(() => setShowIdeaFlow(true), []);
+  const closeIdeaFlow = useCallback(() => setShowIdeaFlow(false), []);
+
+  const handleIdeaFlowSave = useCallback(async (template: Template) => {
+    await saveTemplate(template);
+    setShowIdeaFlow(false);
+  }, [saveTemplate]);
+
+  const handleIdeaFlowEdit = useCallback((template: Template) => {
+    setShowIdeaFlow(false);
+    startEditing(template);
+  }, [startEditing]);
+
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
     cancelEditing();
     closeChecklist();
+    setShowIdeaFlow(false);
     setSearchQuery('');
   }, [cancelEditing, closeChecklist]);
 
@@ -62,6 +80,16 @@ const App: React.FC = () => {
           onDeletePhoto={deleteChecklistPhoto}
           onDelete={deleteChecklist}
           onBack={closeChecklist}
+        />
+      );
+    }
+
+    if (showIdeaFlow) {
+      return (
+        <IdeaFlowView
+          onSave={handleIdeaFlowSave}
+          onEdit={handleIdeaFlowEdit}
+          onClose={closeIdeaFlow}
         />
       );
     }
@@ -102,6 +130,7 @@ const App: React.FC = () => {
             onDelete={deleteTemplate}
             onCreateChecklist={createChecklist}
             searchQuery={searchQuery}
+            onStartFromIdea={startIdeaFlow}
           />
         );
       case 'settings':
@@ -109,7 +138,7 @@ const App: React.FC = () => {
       default:
         return null;
     }
-  }, [viewingChecklist, editingTemplate, activeTab, templates, checklists, searchQuery, updateChecklistTitle, toggleItem, addChecklistPhoto, deleteChecklistPhoto, deleteChecklist, closeChecklist, saveTemplate, cancelEditing, addTemplatePhoto, deleteTemplatePhoto, startEditing, handleClearData]);
+  }, [viewingChecklist, editingTemplate, showIdeaFlow, activeTab, templates, checklists, searchQuery, updateChecklistTitle, toggleItem, addChecklistPhoto, deleteChecklistPhoto, deleteChecklist, closeChecklist, saveTemplate, cancelEditing, addTemplatePhoto, deleteTemplatePhoto, startEditing, handleClearData, handleIdeaFlowSave, handleIdeaFlowEdit, closeIdeaFlow, startIdeaFlow]);
 
   return (
     <Layout
@@ -120,7 +149,7 @@ const App: React.FC = () => {
     >
       <AnimatePresence mode="wait">
         <motion.div
-          key={activeTab + (editingTemplate !== undefined ? '-editing' : '') + (viewingChecklist ? '-viewing' : '')}
+          key={activeTab + (editingTemplate !== undefined ? '-editing' : '') + (viewingChecklist ? '-viewing' : '') + (showIdeaFlow ? '-idea' : '')}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}

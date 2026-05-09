@@ -14,6 +14,7 @@ interface TemplateListProps {
   onCreateChecklist: (template: Template) => void;
   searchQuery: string;
   hideHeader?: boolean;
+  onStartFromIdea?: () => void;
 }
 
 const TemplateList: React.FC<TemplateListProps> = ({
@@ -23,7 +24,8 @@ const TemplateList: React.FC<TemplateListProps> = ({
   onDelete,
   onCreateChecklist,
   searchQuery,
-  hideHeader = false
+  hideHeader = false,
+  onStartFromIdea
 }) => {
   const { t } = useLanguage();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -49,11 +51,18 @@ const TemplateList: React.FC<TemplateListProps> = ({
   return (
     <div className="space-y-4">
       {!hideHeader && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold">{t('templates_title')}</h2>
-          <button onClick={onAdd} className="btn btn-primary py-1.5 px-3">
-            <Plus size={16} /> {t('templates_new')}
-          </button>
+          <div className="flex items-center gap-2">
+            {onStartFromIdea && (
+              <button onClick={onStartFromIdea} className="btn btn-ghost py-1.5 px-3 text-accent border border-subtle text-xs">
+                {t('idea_button')}
+              </button>
+            )}
+            <button onClick={onAdd} className="btn btn-primary py-1.5 px-3">
+              <Plus size={16} /> {t('templates_new')}
+            </button>
+          </div>
         </div>
       )}
 

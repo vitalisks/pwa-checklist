@@ -11,12 +11,18 @@ export interface Category {
   items: TemplateItem[];
 }
 
+export interface GeneratedFrom {
+  idea: string;
+  promptVersion: string;
+}
+
 export interface Template {
   id: string;
   title: string;
   description: string;
   categories: Category[];
   updatedAt: number;
+  generatedFrom?: GeneratedFrom;
 }
 
 export interface ChecklistItem {
