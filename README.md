@@ -9,19 +9,23 @@ CheckFlow is a beautifully designed, offline-capable Progressive Web Application
 *   **📱 Progressive Web App**: Installable on mobile and desktop, works fully offline.
 *   **🎨 Premium UI/UX**: Modern glassmorphism design with smooth animations and transitions.
 *   **⚡ Fast & Reliable**: Uses **IndexedDB** for virtually unlimited offline storage and instant loading.
-*   **🌍 Multi-language Support**: Fully localized in **English**, **Latvian**, and **Russian** with auto-detection.
+*   **🌍 Multi-language Support**: Fully localized in **English**, **Spanish**, **Latvian**, and **Russian** with auto-detection.
 *   **📋 Template System**: Create reusable templates with categories and items to quickly spin up new checklists.
 *   **🔄 Smart State**: Checklists track progress automatically, supporting "Skip" logic for flexible workflows.
+*   **📸 Photo Support**: Attach guide photos to template items and capture your own photos per checklist item. Full-screen lightbox with swipe navigation.
+*   **✏️ Inline Editing**: Edit checklist titles in-place directly from the checklist view.
+*   **↕️ Drag & Drop**: Reorder categories and items in the template editor via drag and drop.
 *   **🔒 Privacy Focused**: All data stored locally on your device. Zero tracking.
 
 ## 🛠️ Technology Stack
 
-*   **Core**: [React 18](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/)
+*   **Core**: [React 19](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/)
 *   **Build**: [Vite](https://vitejs.dev/)
-*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **Styling**: CSS Modules + CSS custom properties (design tokens) — no Tailwind
 *   **State & Storage**: React Hooks + IndexedDB (Custom implementation)
 *   **Icons**: [Lucide React](https://lucide.dev/)
 *   **Animations**: [Framer Motion](https://www.framer.com/motion/)
+*   **Drag & Drop**: [@dnd-kit](https://dndkit.com/)
 
 ## 🚀 Getting Started
 
@@ -58,6 +62,7 @@ CheckFlow is a beautifully designed, offline-capable Progressive Web Application
 CheckFlow automatically detects your browser's language. You can also manually switch languages in the **Settings** tab.
 
 *   🇺🇸 English (Default)
+*   🇪🇸 Spanish
 *   🇱🇻 Latvian
 *   🇷🇺 Russian
 

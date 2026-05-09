@@ -78,4 +78,9 @@ export default {
   validation_category_name_required: 'Visu kategoriju nosaukumi ir obligāti.',
   validation_item_name_required: 'Visu vienumu nosaukumi ir obligāti.',
   action_ok: 'Labi',
+  see_more: 'Rādīt vairāk',
+  see_less: 'Rādīt mazāk',
+  filter_all: 'Visi',
+  filter_unfinished: 'Nepabeigti',
+  filter_done: 'Pabeigti',
 };

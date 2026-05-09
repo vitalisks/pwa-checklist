@@ -78,4 +78,9 @@ export default {
   validation_category_name_required: 'Названия всех категорий обязательны.',
   validation_item_name_required: 'Названия всех элементов обязательны.',
   action_ok: 'ОК',
+  see_more: 'Показать больше',
+  see_less: 'Показать меньше',
+  filter_all: 'Все',
+  filter_unfinished: 'Незавершённые',
+  filter_done: 'Завершённые',
 };

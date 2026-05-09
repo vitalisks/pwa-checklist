@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import Layout from './components/Layout';
 import TemplateList from './components/TemplateList';
 import TemplateEditor from './components/TemplateEditor';
@@ -39,19 +39,19 @@ const App: React.FC = () => {
     closeChecklist,
   } = useChecklists();
 
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
     cancelEditing();
     closeChecklist();
     setSearchQuery('');
-  };
+  }, [cancelEditing, closeChecklist]);
 
-  const handleClearData = async () => {
+  const handleClearData = useCallback(async () => {
     await storageService.clearAll();
     window.location.reload();
-  };
+  }, []);
 
-  const renderContent = () => {
+  const memoizedContent = useMemo(() => {
     if (viewingChecklist) {
       return (
         <ChecklistView
@@ -109,7 +109,7 @@ const App: React.FC = () => {
       default:
         return null;
     }
-  };
+  }, [viewingChecklist, editingTemplate, activeTab, templates, checklists, searchQuery, updateChecklistTitle, toggleItem, addChecklistPhoto, deleteChecklistPhoto, deleteChecklist, closeChecklist, saveTemplate, cancelEditing, addTemplatePhoto, deleteTemplatePhoto, startEditing, handleClearData]);
 
   return (
     <Layout
@@ -126,7 +126,7 @@ const App: React.FC = () => {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
         >
-          {renderContent()}
+          {memoizedContent}
         </motion.div>
       </AnimatePresence>
     </Layout>

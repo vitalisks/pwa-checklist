@@ -107,6 +107,11 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
+              {checklist.templateTitle && (
+                <p className="text-xs font-semibold text-accent tracking-wider uppercase mb-1">
+                  {checklist.templateTitle}
+                </p>
+              )}
               {editingTitle ? (
                 <div>
                   <input
@@ -131,8 +136,8 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold flex-1 truncate">
+                <div className="flex items-center gap-1">
+                  <h2 className="text-base font-semibold flex-1">
                     {checklist.title || t('checklist_title_placeholder')}
                   </h2>
                   <button
@@ -143,12 +148,6 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
                     <Pencil size={13} />
                   </button>
                 </div>
-              )}
-              {checklist.templateTitle && (
-                <p className="text-tertiary text-xs mt-1.5">
-                  <span className="tracking-wide">{t('checklist_from_template')}: </span>
-                  {checklist.templateTitle}
-                </p>
               )}
               <p className="text-tertiary text-xs mt-1">
                 {new Date(checklist.createdAt).toLocaleDateString(
@@ -168,11 +167,11 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
 
       <div className="space-y-4">
         {checklist.categories.map((category) => (
-          <div key={category.id} className="space-y-2">
+          <div key={category.id} className="space-y-3">
             <h3 className="section-label">
               {category.name}
             </h3>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {category.items.map((item) => {
                 const allPhotoIds = [
                   ...(item.guidePhotoIds || []),

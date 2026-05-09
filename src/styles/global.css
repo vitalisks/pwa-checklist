@@ -214,6 +214,14 @@ textarea.input {
     min-height: 50px;
 }
 
+/* Prevent Safari/iOS auto-zoom on input focus.
+   Specificity (0,1,1) beats utility classes like .text-sm (0,1,0),
+   ensuring all .input elements stay at ≥ 16px regardless of size overrides. */
+input.input,
+textarea.input {
+    font-size: 1rem;
+}
+
 /* ── Typography ── */
 .text-primary {
     color: var(--text-primary);
@@ -242,11 +250,11 @@ textarea.input {
 }
 
 .text-xs {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-xs);
     line-height: 14px;
 }
 .text-sm {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     line-height: 18px;
 }
 .text-base {
@@ -262,11 +270,11 @@ textarea.input {
     line-height: 24px;
 }
 .text-2xl {
-    font-size:1.75rem;
+    font-size: 1.75rem;
     line-height: 28px;
 }
 .text-2xs {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-xs);
     line-height: 14px;
 }
 
@@ -355,6 +363,13 @@ textarea.input {
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-clamp: 1;
+}
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 3;
 }
 .gap-1 {
     gap: 4px;
@@ -462,8 +477,14 @@ textarea.input {
 .mt-3 {
     margin-top: 12px;
 }
+.mb-0\.5 {
+    margin-bottom: 2px;
+}
 .mb-1 {
     margin-bottom: 4px;
+}
+.mb-1\.5 {
+    margin-bottom: 6px;
 }
 .mb-2 {
     margin-bottom: 8px;
@@ -542,9 +563,7 @@ textarea.input {
 .h-14 {
     height: 56px;
 }
-.min-h-screen {
-    min-height: 100vh;
-}
+/* ── Spacing (continued) ── */
 .min-h-screen {
     min-height: 100dvh;
 }
@@ -678,6 +697,9 @@ textarea.input {
 .bg-surface-2 {
     background: var(--surface-2);
 }
+.bg-accent {
+    background: var(--accent);
+}
 .bg-accent-subtle {
     background: var(--accent-subtle);
 }
@@ -773,6 +795,15 @@ textarea.input {
 }
 .cursor-zoom-out {
     cursor: zoom-out;
+}
+.cursor-grab {
+    cursor: grab;
+}
+.cursor-grabbing {
+    cursor: grabbing;
+}
+.shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
 }
 .max-w-full {
     max-width: 100%;

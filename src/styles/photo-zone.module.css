@@ -134,8 +134,8 @@
 }
 
 .photo-add-btn-sm {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-sm);
   background: var(--surface-1);
   color: var(--text-tertiary);
@@ -145,7 +145,7 @@
   flex-shrink: 0;
   cursor: pointer;
   transition: color 0.12s var(--ease-out), border-color 0.12s var(--ease-out);
-  border: 1px solid transparent;
+  border: 1px solid var(--border-subtle);
 }
 
 .photo-add-btn-sm:hover {

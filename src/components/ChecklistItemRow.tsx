@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { Check, Circle, CircleSlash, Camera, Image, X } from 'lucide-react';
 import { ChecklistItem } from '../types';
 import { motion } from 'framer-motion';
@@ -30,6 +30,9 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   const [guideThumbs, setGuideThumbs] = useState<Record<string, string>>({});
   const [loadingGuides, setLoadingGuides] = useState(false);
   const [captureThumbs, setCaptureThumbs] = useState<Record<string, string>>({});
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [descClamped, setDescClamped] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
   const isProcessed = item.checked || !!item.skipped;
   const hasDescription = !!item.description && item.description.length > 0;
   const guideIds = item.guidePhotoIds || [];
@@ -79,6 +82,13 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
     return () => { cancelled = true; };
   }, [captureIds.join(',')]);
 
+  useLayoutEffect(() => {
+    if (descRef.current && !descExpanded) {
+      setDescClamped(descRef.current.scrollHeight > descRef.current.clientHeight);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.description]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -104,22 +114,23 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
         onChange={handleFileChange}
       />
 
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2 flex-1 min-w-0">
           {item.checked ? (
             <motion.div
+              className="mt-0.5 shrink-0"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
-              <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center shrink-0">
+              <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center">
                 <Check size={12} style={{ color: 'var(--canvas)' }} strokeWidth={3} />
               </div>
             </motion.div>
           ) : item.skipped ? (
-            <CircleSlash size={20} className="text-warning shrink-0" />
+            <CircleSlash size={20} className="text-warning shrink-0 mt-0.5" />
           ) : (
-            <Circle size={20} className="text-tertiary shrink-0" />
+            <Circle size={20} className="text-tertiary shrink-0 mt-0.5" />
           )}
 
           <div className="flex flex-col min-w-0 flex-1">
@@ -127,9 +138,22 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               {item.text}
             </span>
             {hasDescription && (
-              <p className="text-xs text-tertiary leading-relaxed mt-0.5 line-clamp-1">
-                {item.description}
-              </p>
+              <div>
+                <p
+                  ref={descRef}
+                  className={`text-xs text-tertiary leading-relaxed mt-0.5${descExpanded ? '' : ' line-clamp-3'}`}
+                >
+                  {item.description}
+                </p>
+                {(descClamped || descExpanded) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDescExpanded(!descExpanded); }}
+                    className="text-2xs text-accent mt-0.5 hover:underline"
+                  >
+                    {descExpanded ? t('see_less') : t('see_more')}
+                  </button>
+                )}
+              </div>
             )}
             {item.skipped && (
               <span className="text-2xs text-warning font-semibold tracking-wide mt-0.5">
@@ -139,7 +163,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-start gap-1.5 shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -153,7 +177,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
 
           <button
             onClick={(e) => { e.stopPropagation(); onToggleSkipped(); }}
-            className={`btn h-7 px-2 text-2xs ${item.skipped ? 'bg-warning-subtle text-warning border-warning-subtle' : 'bg-surface-1 text-tertiary border-subtle'} border rounded-sm flex items-center gap-1`}
+            className={`px-2 py-1 text-2xs ${item.skipped ? 'bg-warning-subtle text-warning border-warning-subtle' : 'bg-surface-1 text-tertiary border-subtle'} border rounded-sm flex items-center gap-1`}
             title={t('checklist_skip')}
           >
             <CircleSlash size={10} />

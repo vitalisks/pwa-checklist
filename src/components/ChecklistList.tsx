@@ -6,6 +6,8 @@ import ConfirmDialog from './ConfirmDialog';
 
 import { useLanguage } from '../hooks/useLanguage';
 
+type Filter = 'all' | 'active' | 'completed';
+
 interface ChecklistListProps {
   checklists: Checklist[];
   onOpen: (checklist: Checklist) => void;
@@ -21,17 +23,26 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
 
-  const filteredChecklists = checklists.filter(c => {
-    const query = searchQuery.toLowerCase();
-    const matchesTitle = c.title.toLowerCase().includes(query);
-    const matchesMetadata = c.metadata?.toLowerCase().includes(query);
-    const matchesItems = c.categories.some(cat =>
-      cat.name.toLowerCase().includes(query) ||
-      cat.items.some(item => item.text.toLowerCase().includes(query))
-    );
-    return matchesTitle || matchesMetadata || matchesItems;
-  }).sort((a, b) => b.createdAt - a.createdAt);
+  const filteredChecklists = checklists
+    .filter(c => {
+      const query = searchQuery.toLowerCase();
+      if (query) {
+        const matchesTitle = c.title.toLowerCase().includes(query);
+        const matchesTemplate = c.templateTitle?.toLowerCase().includes(query);
+        const matchesMetadata = c.metadata?.toLowerCase().includes(query);
+        const matchesItems = c.categories.some(cat =>
+          cat.name.toLowerCase().includes(query) ||
+          cat.items.some(item => item.text.toLowerCase().includes(query))
+        );
+        if (!matchesTitle && !matchesTemplate && !matchesMetadata && !matchesItems) return false;
+      }
+      if (filter === 'active') return c.status !== 'completed';
+      if (filter === 'completed') return c.status === 'completed';
+      return true;
+    })
+    .sort((a, b) => b.createdAt - a.createdAt);
 
   const getProgress = (checklist: Checklist) => {
     const total = checklist.categories.reduce((acc, cat) => acc + cat.items.length, 0);
@@ -49,10 +60,36 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
     }
   };
 
+  const filters: { key: Filter; label: string }[] = [
+    { key: 'all', label: t('filter_all') },
+    { key: 'active', label: t('filter_unfinished') },
+    { key: 'completed', label: t('filter_done') },
+  ];
+
+  const locale =
+    language === 'lv' ? 'lv-LV' :
+    language === 'ru' ? 'ru-RU' :
+    language === 'es' ? 'es-ES' : 'en-US';
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold">{t('home_active_checklists')}</h2>
+        <div className="flex gap-1.5">
+          {filters.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-2 py-1 rounded-full text-2xs font-semibold border transition-colors ${
+                filter === key
+                  ? 'bg-accent-subtle text-accent border-accent'
+                  : 'bg-surface-1 text-tertiary border-subtle hover:text-primary'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {filteredChecklists.length === 0 ? (
@@ -63,62 +100,66 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredChecklists.map((checklist) => (
-            <motion.div
-              key={checklist.id}
-              layout
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              onClick={() => onOpen(checklist)}
-              className="card card-hover cursor-pointer"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold truncate">
-                      {checklist.title}
-                    </h3>
-                    {checklist.status === 'completed' && (
-                      <span className="badge badge-success">
-                        {t('done')}
-                      </span>
+          {filteredChecklists.map((checklist) => {
+            const progress = getProgress(checklist);
+            return (
+              <motion.div
+                key={checklist.id}
+                layout
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => onOpen(checklist)}
+                className="card card-hover cursor-pointer"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {checklist.templateTitle && (
+                      <p className="text-2xs font-semibold text-accent tracking-wider uppercase mb-0.5">
+                        {checklist.templateTitle}
+                      </p>
                     )}
-                  </div>
-                  <div className="flex items-center gap-3 section-label">
-                    <span>
-                      {new Date(checklist.createdAt).toLocaleDateString(
-                        language === 'es' ? 'es-ES' :
-                        language === 'lv' ? 'lv-LV' :
-                        language === 'ru' ? 'ru-RU' : 'en-US'
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">
+                        {checklist.title}
+                      </h3>
+                      {checklist.status === 'completed' && (
+                        <span className="badge badge-success shrink-0">
+                          {t('done')}
+                        </span>
                       )}
-                    </span>
-                    <span className="font-semibold text-accent">
-                      {getProgress(checklist)}%
-                    </span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xs text-tertiary">
+                        {new Date(checklist.createdAt).toLocaleDateString(locale)}
+                      </span>
+                      <span className="text-2xs font-semibold text-accent">
+                        {progress}%
+                      </span>
+                    </div>
+                    <div className="progress-track">
+                      <div
+                        className={`progress-fill ${checklist.status === 'completed' ? 'progress-fill-done' : 'progress-fill-active'}`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-2 progress-track">
-                    <div
-                      className={`progress-fill ${checklist.status === 'completed' ? 'progress-fill-done' : 'progress-fill-active'}`}
-                      style={{ width: `${getProgress(checklist)}%` }}
-                    />
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <ChevronRight size={16} className="text-tertiary" />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteTarget(checklist.id);
-                    }}
-                    className="btn-icon btn-icon-danger"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <ChevronRight size={16} className="text-tertiary" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(checklist.id);
+                      }}
+                      className="btn-icon btn-icon-danger"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       )}
 

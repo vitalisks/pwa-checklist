@@ -78,4 +78,9 @@ export default {
   validation_category_name_required: 'All category names are required.',
   validation_item_name_required: 'All item names are required.',
   action_ok: 'OK',
+  see_more: 'See more',
+  see_less: 'See less',
+  filter_all: 'All',
+  filter_unfinished: 'Unfinished',
+  filter_done: 'Done',
 };

@@ -3,6 +3,7 @@ import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { storageService } from '../services/storage';
 import { useLanguage } from '../hooks/useLanguage';
+import ConfirmDialog from './ConfirmDialog';
 import styles from './PhotoLightbox.module.css';
 
 interface PhotoLightboxProps {
@@ -19,6 +20,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
   const [loading, setLoading] = useState(true);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const currentId = photoIds[currentIndex];
@@ -69,16 +71,24 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
     setIsZoomed(!isZoomed);
   };
 
-  const handleDelete = () => {
+  const handleDeleteClick = () => {
     if (!onDelete) return;
-    if (window.confirm(t('delete_confirm'))) {
-      onDelete(photoIds[currentIndex]);
-      if (photoIds.length <= 1) {
-        onClose();
-      } else if (currentIndex >= photoIds.length - 1) {
-        setCurrentIndex(Math.max(0, currentIndex - 1));
-      }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!onDelete) return;
+    onDelete(photoIds[currentIndex]);
+    setShowDeleteConfirm(false);
+    if (photoIds.length <= 1) {
+      onClose();
+    } else if (currentIndex >= photoIds.length - 1) {
+      setCurrentIndex(Math.max(0, currentIndex - 1));
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -94,7 +104,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
       <div className="absolute top-4 right-4 flex gap-3 z-10">
         {onDelete && (
           <button
-            onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+            onClick={(e) => { e.stopPropagation(); handleDeleteClick(); }}
             className={styles.btn}
             title={t('item_delete_photo')}
           >
@@ -163,6 +173,16 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
         />
       ) : (
         <div className="text-white/40 text-sm" onClick={(e) => e.stopPropagation()}>No image</div>
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          title={t('delete_confirm_title')}
+          message={t('delete_confirm_msg')}
+          confirmLabel={t('delete_confirm_action')}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
       )}
     </motion.div>
   );
