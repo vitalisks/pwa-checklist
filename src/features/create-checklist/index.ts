@@ -1,0 +1,1 @@
+export { createChecklistFromTemplate } from './model';

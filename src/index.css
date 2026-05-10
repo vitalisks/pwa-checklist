@@ -1,2 +1,2 @@
-@import './styles/tokens.css';
-@import './styles/global.css';
+@import './shared/styles/tokens.css';
+@import './shared/styles/global.css';
