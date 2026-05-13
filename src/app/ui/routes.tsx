@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import type { Template, Checklist } from '@/shared/config';
 import { useAppData } from '../model/use-app-data';
+import { toggleChecklistItem } from '@/features/toggle-checklist-item';
 import { useEditTemplate } from '@/features/edit-template';
 import { Layout } from '@/widgets/layout';
 import { HomeView } from '@/widgets/home-view';
@@ -25,9 +26,8 @@ const AppRoutes: React.FC = () => {
     addTemplatePhoto,
     deleteTemplatePhoto,
     createChecklist,
-    updateChecklistTitle,
+    updateChecklist,
     deleteChecklist,
-    toggleItem,
     addChecklistPhoto,
     deleteChecklistPhoto,
     handleExport,
@@ -71,6 +71,38 @@ const AppRoutes: React.FC = () => {
     setViewingChecklist(null);
   }, []);
 
+  const handleToggleItem = useCallback((checklist: Checklist, categoryId: string, itemId: string, field: 'checked' | 'skipped') => {
+    const updated = toggleChecklistItem(checklist, categoryId, itemId, field);
+    updateChecklist(updated);
+    if (viewingChecklist?.id === checklist.id) {
+      setViewingChecklist(updated);
+    }
+  }, [updateChecklist, viewingChecklist]);
+
+  const handleUpdateTitle = useCallback((checklist: Checklist, newTitle: string) => {
+    const updated = { ...checklist, title: newTitle };
+    updateChecklist(updated);
+    if (viewingChecklist?.id === checklist.id) {
+      setViewingChecklist(updated);
+    }
+  }, [updateChecklist, viewingChecklist]);
+
+  const syncViewingChecklist = useCallback((updated: Checklist) => {
+    if (viewingChecklist?.id === updated.id) {
+      setViewingChecklist(updated);
+    }
+  }, [viewingChecklist]);
+
+  const handleAddChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, file: File) => {
+    const updated = await addChecklistPhoto(checklist, categoryId, itemId, file);
+    syncViewingChecklist(updated);
+  }, [addChecklistPhoto, syncViewingChecklist]);
+
+  const handleDeleteChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => {
+    const updated = await deleteChecklistPhoto(checklist, categoryId, itemId, photoId);
+    syncViewingChecklist(updated);
+  }, [deleteChecklistPhoto, syncViewingChecklist]);
+
   const handleDeleteChecklist = useCallback(async (id: string) => {
     await deleteChecklist(id);
     if (viewingChecklist?.id === id) {
@@ -90,10 +122,10 @@ const AppRoutes: React.FC = () => {
       return (
         <ChecklistView
           checklist={viewingChecklist}
-          onUpdateTitle={updateChecklistTitle}
-          onToggleItem={toggleItem}
-          onAddPhoto={addChecklistPhoto}
-          onDeletePhoto={deleteChecklistPhoto}
+          onUpdateTitle={handleUpdateTitle}
+          onToggleItem={handleToggleItem}
+          onAddPhoto={handleAddChecklistPhoto}
+          onDeletePhoto={handleDeleteChecklistPhoto}
           onDelete={handleDeleteChecklist}
           onBack={handleCloseChecklist}
         />
@@ -163,7 +195,7 @@ const AppRoutes: React.FC = () => {
   }, [
     viewingChecklist, editingTemplate, showIdeaFlow, activeTab,
     templates, checklists, searchQuery,
-    updateChecklistTitle, toggleItem, addChecklistPhoto, deleteChecklistPhoto,
+    handleToggleItem, handleUpdateTitle, handleAddChecklistPhoto, handleDeleteChecklistPhoto,
     handleDeleteChecklist, handleCloseChecklist,
     handleSaveTemplate, cancelEditing, addTemplatePhoto, deleteTemplatePhoto,
     startEditing, deleteTemplate, handleCreateChecklist, handleOpenChecklist,

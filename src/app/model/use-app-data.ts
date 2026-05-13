@@ -164,58 +164,52 @@ export function useAppData() {
     updateChecklist(updated);
   }, [updateChecklist]);
 
-  const addChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, file: File) => {
-    try {
-      const uuid = generateUUID();
-      const photoId = buildChecklistPhotoId(itemId, uuid);
-      const dataUrl = await compressImage(file);
-      const photo: ChecklistPhoto = { itemId: photoId, dataUrl, updatedAt: Date.now() };
-      await photoRepo.save(photo);
+  const addChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, file: File): Promise<Checklist> => {
+    const uuid = generateUUID();
+    const photoId = buildChecklistPhotoId(itemId, uuid);
+    const dataUrl = await compressImage(file);
+    const photo: ChecklistPhoto = { itemId: photoId, dataUrl, updatedAt: Date.now() };
+    await photoRepo.save(photo);
 
-      const newCategories = checklist.categories.map((cat) => {
-        if (cat.id === categoryId) {
-          return {
-            ...cat,
-            items: cat.items.map((item) =>
-              item.id === itemId
-                ? { ...item, photoIds: [...(item.photoIds || []), photoId] }
-                : item
-            ),
-          };
-        }
-        return cat;
-      });
+    const newCategories = checklist.categories.map((cat) => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          items: cat.items.map((item) =>
+            item.id === itemId
+              ? { ...item, photoIds: [...(item.photoIds || []), photoId] }
+              : item
+          ),
+        };
+      }
+      return cat;
+    });
 
-      const updatedChecklist = { ...checklist, categories: newCategories };
-      await updateChecklist(updatedChecklist);
-    } catch (error) {
-      console.error('Failed to save photo:', error);
-    }
+    const updatedChecklist = { ...checklist, categories: newCategories };
+    await updateChecklist(updatedChecklist);
+    return updatedChecklist;
   }, [photoRepo, updateChecklist]);
 
-  const deleteChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => {
-    try {
-      await photoRepo.delete(photoId);
+  const deleteChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, photoId: string): Promise<Checklist> => {
+    await photoRepo.delete(photoId);
 
-      const newCategories = checklist.categories.map((cat) => {
-        if (cat.id === categoryId) {
-          return {
-            ...cat,
-            items: cat.items.map((item) =>
-              item.id === itemId
-                ? { ...item, photoIds: (item.photoIds || []).filter((id) => id !== photoId) }
-                : item
-            ),
-          };
-        }
-        return cat;
-      });
+    const newCategories = checklist.categories.map((cat) => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          items: cat.items.map((item) =>
+            item.id === itemId
+              ? { ...item, photoIds: (item.photoIds || []).filter((id) => id !== photoId) }
+              : item
+          ),
+        };
+      }
+      return cat;
+    });
 
-      const updatedChecklist = { ...checklist, categories: newCategories };
-      await updateChecklist(updatedChecklist);
-    } catch (error) {
-      console.error('Failed to delete photo:', error);
-    }
+    const updatedChecklist = { ...checklist, categories: newCategories };
+    await updateChecklist(updatedChecklist);
+    return updatedChecklist;
   }, [photoRepo, updateChecklist]);
 
   const handleExport = useCallback(async () => {
