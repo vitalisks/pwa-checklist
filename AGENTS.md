@@ -65,11 +65,11 @@ src/
 │   │   └── ui/
 │   │       ├── ChecklistItemRow.tsx
 │   │       └── ChecklistItemRow.module.css
-│   ├── edit-template/
-│   │   ├── index.ts             # Exports useEditTemplate hook + EditingState type
-│   │   └── model/
-│   │       ├── index.ts
-│   │       └── use-edit-template.ts  # Manages idle/creating/editing states
+│ ├── edit-template/
+│ │ ├── index.ts # Exports useEditingState, EditingStateProvider, EditingState type
+│ │ └── model/
+│ │ ├── index.ts
+│ │ └── editing-context.tsx # EditingStateProvider + useEditingState() — idle/creating/editing
 │   ├── create-checklist/
 │   │   ├── index.ts             # Exports createChecklistFromTemplate (pure)
 │   │   └── model/
@@ -213,9 +213,11 @@ src/
 * Current key count: ~69 keys per language file.
 
 ### 4.5. Navigation & Routing
-* Simple tab-based navigation managed in `app/ui/routes.tsx` (`home`, `templates`, `settings`).
-* Overlay views: `editingTemplate` (shows `TemplateEditor`), `viewingChecklist` (shows `ChecklistView`), `showIdeaFlow` (shows `IdeaFlowView`) replace tab content.
-* `useEditTemplate` from `features/edit-template` manages idle/creating/editing state.
+* Navigation state lives in `NavigationContext` (`app/model/navigation-context.tsx`): `activeTab`, `searchQuery`, `viewingChecklistId`, `isIdeaFlowOpen` + actions (`switchTab`, `openChecklist`, `closeChecklist`, `createAndOpenChecklist`, `openIdeaFlow`, `closeIdeaFlow`).
+* Editing state lives in `EditingStateContext` (`features/edit-template/model/editing-context.tsx`): `idle`/`creating`/`editing` modes + `startEditing`, `cancelEditing`, `finishEditing`.
+* Data contexts: `TemplateContext` (`app/model/template-context.tsx`) and `ChecklistContext` (`app/model/checklist-context.tsx`) split the old `useAppData` responsibilities.
+* `app/ui/routes.tsx` consumes `useNavigation()`, `useEditingState()`, `useTemplate()`, `useChecklist()` to compose views.
+* Overlay views: `editingTemplate` (→ `TemplateEditor`), `viewingChecklist` (→ `ChecklistView`), `isIdeaFlowOpen` (→ `IdeaFlowView`) replace tab content.
 * Transitions handled by `Framer Motion` `AnimatePresence` for smooth switching.
 
 ### 4.6. Styling (CSS Modules + Design Tokens — NOT Tailwind)
@@ -244,7 +246,9 @@ Photos are stored in IndexedDB via `PhotoRepository.save` / `get` / `delete`. Im
 
 **Checklist execution**: `ChecklistItemRow` shows a guide strip and a captures strip. `useAppData` provides `addChecklistPhoto(checklist, categoryId, itemId, file)` and `deleteChecklistPhoto(checklist, categoryId, itemId, photoId)`.
 
-**Lightbox**: `PhotoLightbox` (from `features/manage-photos`) receives a flat `photoIds[]` array (guide IDs first, then capture IDs) and a `startIndex`. It receives an optional `onDelete` prop — set to `undefined` for guide photos so the delete button is hidden.
+**Lightbox**: `PhotoLightbox` (from `features/manage-photos`) receives a flat `photoIds[]` array (guide IDs, then AI image link URLs, then capture IDs) and a `startIndex`. It receives an optional `onDelete` prop — set to `undefined` for guide photos so the delete button is hidden. External URLs (`http`/`https`) are used directly as `<img src>` instead of IndexedDB lookup; delete button is hidden for external URLs.
+
+**AI image links** (`TemplateItem.imageLinks` / `ChecklistItem.imageLinks`): External URLs from AI-generated templates. Rendered in the photo strip between guide and capture photos with an "AI" badge. Broken links show a placeholder. Propagated from `TemplateItem` to `ChecklistItem` at checklist creation time.
 
 **Cleanup**: Deleting a template or checklist cascades to delete all associated photos from IndexedDB (handled in `useAppData`).
 
