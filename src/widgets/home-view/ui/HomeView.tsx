@@ -1,33 +1,12 @@
 import React from 'react';
 import { TemplateList } from '@/widgets/template-list';
 import { ChecklistList } from '@/widgets/checklist-list';
-import type { Template, Checklist } from '@/shared/config';
 import { useLanguage } from '@/shared/i18n';
+import { useNavigation } from '@/app/model/navigation-context';
 
-interface HomeViewProps {
-  templates: Template[];
-  checklists: Checklist[];
-  searchQuery: string;
-  onAddTemplate: () => void;
-  onEditTemplate: (template: Template) => void;
-  onDeleteTemplate: (id: string) => void;
-  onCreateChecklist: (template: Template) => void;
-  onOpenChecklist: (checklist: Checklist) => void;
-  onDeleteChecklist: (id: string) => void;
-}
-
-const HomeView: React.FC<HomeViewProps> = ({
-  templates,
-  checklists,
-  searchQuery,
-  onAddTemplate,
-  onEditTemplate,
-  onDeleteTemplate,
-  onCreateChecklist,
-  onOpenChecklist,
-  onDeleteChecklist,
-}) => {
-  const { t } = useLanguage();
+const HomeView: React.FC = () => {
+const { t } = useLanguage();
+const { searchQuery } = useNavigation();
 
   return (
     <div className="space-y-6">
@@ -37,11 +16,6 @@ const HomeView: React.FC<HomeViewProps> = ({
             <h2 className="section-label">{t('home_templates_found')}</h2>
           </div>
           <TemplateList
-            templates={templates}
-            onAdd={onAddTemplate}
-            onEdit={onEditTemplate}
-            onDelete={onDeleteTemplate}
-            onCreateChecklist={onCreateChecklist}
             searchQuery={searchQuery}
             hideHeader={true}
           />
@@ -55,9 +29,6 @@ const HomeView: React.FC<HomeViewProps> = ({
           </div>
         )}
         <ChecklistList
-          checklists={checklists}
-          onOpen={onOpenChecklist}
-          onDelete={onDeleteChecklist}
           searchQuery={searchQuery}
         />
       </section>

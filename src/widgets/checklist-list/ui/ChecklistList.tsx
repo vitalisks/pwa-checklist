@@ -4,23 +4,23 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/shared/ui';
 import { useLanguage } from '@/shared/i18n';
+import { useChecklist } from '@/app/model/checklist-context';
+import { useNavigation } from '@/app/model/navigation-context';
 
 type Filter = 'all' | 'active' | 'completed';
 
 interface ChecklistListProps {
-  checklists: Checklist[];
-  onOpen: (checklist: Checklist) => void;
-  onDelete: (id: string) => void;
-  searchQuery: string;
+  searchQuery?: string;
 }
 
 const ChecklistList: React.FC<ChecklistListProps> = ({
-  checklists,
-  onOpen,
-  onDelete,
-  searchQuery
+  searchQuery: searchQueryProp,
 }) => {
   const { t, language } = useLanguage();
+  const { checklists, deleteChecklist } = useChecklist();
+  const { openChecklist, searchQuery: navSearchQuery } = useNavigation();
+
+  const searchQuery = searchQueryProp ?? navSearchQuery;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -54,7 +54,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
 
   const handleDeleteConfirm = () => {
     if (deleteTarget) {
-      onDelete(deleteTarget);
+      deleteChecklist(deleteTarget);
       setDeleteTarget(null);
     }
   };
@@ -107,7 +107,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
                 layout
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                onClick={() => onOpen(checklist)}
+                onClick={() => openChecklist(checklist.id)}
                 className="card card-hover cursor-pointer"
               >
                 <div className="flex items-center justify-between gap-3">

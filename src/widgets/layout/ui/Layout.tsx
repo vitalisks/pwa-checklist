@@ -1,18 +1,16 @@
 import React from 'react';
 import { Search, LayoutGrid, Settings, Home } from 'lucide-react';
 import { useLanguage } from '@/shared/i18n';
+import { useNavigation } from '@/app/model/navigation-context';
 import styles from './Layout.module.css';
 
 interface LayoutProps {
   children: React.ReactNode;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-  onSearch: (query: string) => void;
-  searchQuery: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onSearch, searchQuery }) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { t } = useLanguage();
+  const { activeTab, switchTab, searchQuery, setSearchQuery } = useNavigation();
 
   return (
     <div className={styles['app-shell']}>
@@ -26,7 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onSea
               placeholder={t('find_placeholder')}
               className={styles['search-input']}
               value={searchQuery}
-              onChange={(e) => onSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
@@ -48,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onSea
           return (
             <button
               key={id}
-              onClick={() => onTabChange(id)}
+              onClick={() => switchTab(id)}
               className={styles['nav-item']}
               style={{ color: isActive ? 'var(--accent)' : 'var(--text-tertiary)' }}
             >

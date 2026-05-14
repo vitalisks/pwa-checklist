@@ -4,29 +4,26 @@ import type { Template } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { ConfirmDialog } from '@/shared/ui';
 import { useLanguage } from '@/shared/i18n';
+import { useTemplate } from '@/app/model/template-context';
+import { useEditingState } from '@/features/edit-template';
+import { useNavigation } from '@/app/model/navigation-context';
 
 interface TemplateListProps {
-  templates: Template[];
-  onAdd: () => void;
-  onEdit: (template: Template) => void;
-  onDelete: (id: string) => void;
-  onCreateChecklist: (template: Template) => void;
-  searchQuery: string;
+  searchQuery?: string;
   hideHeader?: boolean;
-  onStartFromIdea?: () => void;
 }
 
 const TemplateList: React.FC<TemplateListProps> = ({
-  templates,
-  onAdd,
-  onEdit,
-  onDelete,
-  onCreateChecklist,
-  searchQuery,
+  searchQuery: searchQueryProp,
   hideHeader = false,
-  onStartFromIdea
 }) => {
   const { t } = useLanguage();
+  const { templates, deleteTemplate } = useTemplate();
+  const { startEditing } = useEditingState();
+  const { searchQuery: navSearchQuery, createAndOpenChecklist, openIdeaFlow } = useNavigation();
+
+  const searchQuery = searchQueryProp ?? navSearchQuery;
+
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const filteredTemplates = templates.filter(t => {
@@ -42,7 +39,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
 
   const handleDeleteConfirm = () => {
     if (deleteTarget) {
-      onDelete(deleteTarget);
+      deleteTemplate(deleteTarget);
       setDeleteTarget(null);
     }
   };
@@ -53,12 +50,11 @@ const TemplateList: React.FC<TemplateListProps> = ({
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold">{t('templates_title')}</h2>
           <div className="flex items-center gap-2">
-            {onStartFromIdea && (
-              <button onClick={onStartFromIdea} className="btn btn-ghost py-1.5 px-3 text-accent border border-subtle text-xs">
-                {t('idea_button')}
-              </button>
-            )}
-            <button onClick={onAdd} className="btn btn-primary py-1.5 px-3">
+            <button onClick={openIdeaFlow} className="btn btn-ghost py-1.5 px-3 text-accent border border-subtle text-xs">
+              {t('idea_button')}
+            </button>
+            <button onClick={() => startEditing(null)} className="btn btn-primary py-1.5 px-3">
+
               <Plus size={16} /> {t('templates_new')}
             </button>
           </div>
@@ -71,7 +67,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
             <p className="text-secondary text-sm mb-3">
               {searchQuery ? `${t('home_no_matches')} "${searchQuery}"` : t('home_no_templates')}
             </p>
-            <button onClick={onAdd} className="btn btn-ghost text-accent py-1">
+            <button onClick={() => startEditing(null)} className="btn btn-ghost text-accent py-1">
               <Plus size={16} /> {t('home_add_template')}
             </button>
           </div>
@@ -95,14 +91,14 @@ const TemplateList: React.FC<TemplateListProps> = ({
               </div>
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-subtle">
                 <button
-                  onClick={() => onCreateChecklist(template)}
+                  onClick={() => createAndOpenChecklist(template)}
                   className="btn btn-primary h-8 px-3 text-xs"
                 >
                   <Play size={12} /> {t('templates_use')}
                 </button>
                 <div className="flex items-center gap-1 ml-auto">
                   <button
-                    onClick={() => onEdit(template)}
+                    onClick={() => startEditing(template)}
                     className="btn-icon"
                   >
                     <Edit2 size={14} />

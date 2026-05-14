@@ -1,17 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useLanguage } from '@/shared/i18n';
+import { useUtility } from '@/app/model/utility-context';
 import { ConfirmDialog } from '@/shared/ui';
 import { Trash2, Download, Upload } from 'lucide-react';
-import type { ImportResult } from '@/shared/api';
 
-interface SettingsViewProps {
-  onClearData: () => void;
-  onExport: () => Promise<void>;
-  onImport: (file: File) => Promise<ImportResult>;
-}
-
-const SettingsView: React.FC<SettingsViewProps> = ({ onClearData, onExport, onImport }) => {
+const SettingsView: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
+  const { handleExport, handleImport, handleClearData } = useUtility();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -19,14 +14,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onClearData, onExport, onIm
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClear = () => {
-    onClearData();
+    handleClearData();
     setShowClearConfirm(false);
   };
 
-  const handleExport = async () => {
+  const handleExportClick = async () => {
     setExporting(true);
     try {
-      await onExport();
+      await handleExport();
     } finally {
       setExporting(false);
     }
@@ -39,7 +34,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onClearData, onExport, onIm
     setImporting(true);
     setImportMessage(null);
     try {
-      const result = await onImport(file);
+      const result = await handleImport(file);
       const { templates, checklists, photos } = result.added;
       const msg = `Added ${templates} templates, ${checklists} checklists, ${photos} photos. Skipped ${result.skipped}.`;
       setImportMessage({ text: msg, error: false });
@@ -90,7 +85,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onClearData, onExport, onIm
 
         <div className="flex gap-2">
           <button
-            onClick={handleExport}
+            onClick={handleExportClick}
             disabled={exporting}
             className="btn btn-soft flex-1"
           >

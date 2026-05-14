@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import type { Template, Checklist } from '@/shared/config';
-import { useAppData } from '../model/use-app-data';
-import { toggleChecklistItem } from '@/features/toggle-checklist-item';
-import { useEditTemplate } from '@/features/edit-template';
+import React, { useCallback, useMemo } from 'react';
+import type { Template } from '@/shared/config';
+import { useTemplate } from '@/app/model/template-context';
+import { useChecklist } from '@/app/model/checklist-context';
+import { useEditingState } from '@/features/edit-template';
+import { useNavigation } from '@/app/model/navigation-context';
 import { Layout } from '@/widgets/layout';
 import { HomeView } from '@/widgets/home-view';
 import { TemplateList } from '@/widgets/template-list';
@@ -13,133 +14,30 @@ import { IdeaFlowView } from '@/features/idea-flow';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AppRoutes: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewingChecklist, setViewingChecklist] = useState<Checklist | null>(null);
-  const [showIdeaFlow, setShowIdeaFlow] = useState(false);
+  const { editingTemplate, cancelEditing, finishEditing } = useEditingState();
+  const { saveTemplate } = useTemplate();
+  const { checklists } = useChecklist();
+  const { activeTab, viewingChecklistId, isIdeaFlowOpen, closeIdeaFlow } = useNavigation();
 
-  const {
-    templates,
-    checklists,
-    saveTemplate,
-    deleteTemplate,
-    addTemplatePhoto,
-    deleteTemplatePhoto,
-    createChecklist,
-    updateChecklist,
-    deleteChecklist,
-    addChecklistPhoto,
-    deleteChecklistPhoto,
-    handleExport,
-    handleImport,
-    handleClearData,
-  } = useAppData();
-
-  const { editingState, startEditing, cancelEditing, finishEditing } = useEditTemplate();
-
-  const startIdeaFlow = useCallback(() => setShowIdeaFlow(true), []);
-  const closeIdeaFlow = useCallback(() => setShowIdeaFlow(false), []);
-
-  const handleIdeaFlowSave = useCallback(async (template: Template) => {
-    await saveTemplate(template);
-    setShowIdeaFlow(false);
-  }, [saveTemplate]);
-
-  const handleIdeaFlowEdit = useCallback((template: Template) => {
-    setShowIdeaFlow(false);
-    startEditing(template);
-  }, [startEditing]);
-
-  const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab);
-    cancelEditing();
-    setViewingChecklist(null);
-    setShowIdeaFlow(false);
-    setSearchQuery('');
-  }, [cancelEditing]);
-
-  const handleCreateChecklist = useCallback(async (template: Template) => {
-    const newChecklist = await createChecklist(template);
-    if (newChecklist) setViewingChecklist(newChecklist);
-  }, [createChecklist]);
-
-  const handleOpenChecklist = useCallback((checklist: Checklist) => {
-    setViewingChecklist(checklist);
-  }, []);
-
-  const handleCloseChecklist = useCallback(() => {
-    setViewingChecklist(null);
-  }, []);
-
-  const handleToggleItem = useCallback((checklist: Checklist, categoryId: string, itemId: string, field: 'checked' | 'skipped') => {
-    const updated = toggleChecklistItem(checklist, categoryId, itemId, field);
-    updateChecklist(updated);
-    if (viewingChecklist?.id === checklist.id) {
-      setViewingChecklist(updated);
-    }
-  }, [updateChecklist, viewingChecklist]);
-
-  const handleUpdateTitle = useCallback((checklist: Checklist, newTitle: string) => {
-    const updated = { ...checklist, title: newTitle };
-    updateChecklist(updated);
-    if (viewingChecklist?.id === checklist.id) {
-      setViewingChecklist(updated);
-    }
-  }, [updateChecklist, viewingChecklist]);
-
-  const syncViewingChecklist = useCallback((updated: Checklist) => {
-    if (viewingChecklist?.id === updated.id) {
-      setViewingChecklist(updated);
-    }
-  }, [viewingChecklist]);
-
-  const handleAddChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, file: File) => {
-    const updated = await addChecklistPhoto(checklist, categoryId, itemId, file);
-    syncViewingChecklist(updated);
-  }, [addChecklistPhoto, syncViewingChecklist]);
-
-  const handleDeleteChecklistPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => {
-    const updated = await deleteChecklistPhoto(checklist, categoryId, itemId, photoId);
-    syncViewingChecklist(updated);
-  }, [deleteChecklistPhoto, syncViewingChecklist]);
-
-  const handleDeleteChecklist = useCallback(async (id: string) => {
-    await deleteChecklist(id);
-    if (viewingChecklist?.id === id) {
-      setViewingChecklist(null);
-    }
-  }, [deleteChecklist, viewingChecklist]);
+  const viewingChecklist = checklists.find(c => c.id === viewingChecklistId) ?? null;
 
   const handleSaveTemplate = useCallback(async (template: Template) => {
     await saveTemplate(template);
     finishEditing();
   }, [saveTemplate, finishEditing]);
 
-  const editingTemplate = editingState.mode !== 'idle' ? editingState.template : undefined;
+  const handleIdeaFlowSave = useCallback(async (template: Template) => {
+    await saveTemplate(template);
+    closeIdeaFlow();
+  }, [saveTemplate, closeIdeaFlow]);
 
   const memoizedContent = useMemo(() => {
     if (viewingChecklist) {
-      return (
-        <ChecklistView
-          checklist={viewingChecklist}
-          onUpdateTitle={handleUpdateTitle}
-          onToggleItem={handleToggleItem}
-          onAddPhoto={handleAddChecklistPhoto}
-          onDeletePhoto={handleDeleteChecklistPhoto}
-          onDelete={handleDeleteChecklist}
-          onBack={handleCloseChecklist}
-        />
-      );
+      return <ChecklistView checklist={viewingChecklist} />;
     }
 
-    if (showIdeaFlow) {
-      return (
-        <IdeaFlowView
-          onSave={handleIdeaFlowSave}
-          onEdit={handleIdeaFlowEdit}
-          onClose={closeIdeaFlow}
-        />
-      );
+    if (isIdeaFlowOpen) {
+      return <IdeaFlowView onSave={handleIdeaFlowSave} />;
     }
 
     if (editingTemplate !== undefined) {
@@ -148,71 +46,30 @@ const AppRoutes: React.FC = () => {
           template={editingTemplate || undefined}
           onSave={handleSaveTemplate}
           onCancel={cancelEditing}
-          onAddPhoto={addTemplatePhoto}
-          onDeletePhoto={deleteTemplatePhoto}
         />
       );
     }
 
     switch (activeTab) {
       case 'home':
-        return (
-          <HomeView
-            templates={templates}
-            checklists={checklists}
-            searchQuery={searchQuery}
-            onAddTemplate={() => startEditing(null)}
-            onEditTemplate={startEditing}
-            onDeleteTemplate={deleteTemplate}
-            onCreateChecklist={handleCreateChecklist}
-            onOpenChecklist={handleOpenChecklist}
-            onDeleteChecklist={deleteChecklist}
-          />
-        );
+        return <HomeView />;
       case 'templates':
-        return (
-          <TemplateList
-            templates={templates}
-            onAdd={() => startEditing(null)}
-            onEdit={startEditing}
-            onDelete={deleteTemplate}
-            onCreateChecklist={handleCreateChecklist}
-            searchQuery={searchQuery}
-            onStartFromIdea={startIdeaFlow}
-          />
-        );
+        return <TemplateList />;
       case 'settings':
-        return (
-          <SettingsView
-            onClearData={handleClearData}
-            onExport={handleExport}
-            onImport={handleImport}
-          />
-        );
+        return <SettingsView />;
       default:
         return null;
     }
   }, [
-    viewingChecklist, editingTemplate, showIdeaFlow, activeTab,
-    templates, checklists, searchQuery,
-    handleToggleItem, handleUpdateTitle, handleAddChecklistPhoto, handleDeleteChecklistPhoto,
-    handleDeleteChecklist, handleCloseChecklist,
-    handleSaveTemplate, cancelEditing, addTemplatePhoto, deleteTemplatePhoto,
-    startEditing, deleteTemplate, handleCreateChecklist, handleOpenChecklist,
-    handleClearData, handleExport, handleImport,
-    handleIdeaFlowSave, handleIdeaFlowEdit, closeIdeaFlow, startIdeaFlow,
+    viewingChecklist, isIdeaFlowOpen, editingTemplate, activeTab,
+    handleSaveTemplate, handleIdeaFlowSave, cancelEditing,
   ]);
 
   return (
-    <Layout
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-      onSearch={setSearchQuery}
-      searchQuery={searchQuery}
-    >
+    <Layout>
       <AnimatePresence mode="wait">
         <motion.div
-          key={activeTab + (editingTemplate !== undefined ? '-editing' : '') + (viewingChecklist ? '-viewing' : '') + (showIdeaFlow ? '-idea' : '')}
+          key={activeTab + (editingTemplate !== undefined ? '-editing' : '') + (viewingChecklist ? '-viewing' : '') + (isIdeaFlowOpen ? '-idea' : '')}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}

@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { ChevronLeft, CheckCircle, Trash2, Pencil, Check, X } from 'lucide-react';
 import type { Checklist } from '@/shared/config';
 import { useLanguage } from '@/shared/i18n';
+import { useChecklist } from '@/app/model/checklist-context';
+import { useNavigation } from '@/app/model/navigation-context';
 import { ConfirmDialog } from '@/shared/ui';
 import { ChecklistItemRow } from '@/features/toggle-checklist-item';
 import { PhotoLightbox } from '@/features/manage-photos';
@@ -10,12 +12,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface ChecklistViewProps {
   checklist: Checklist;
-  onUpdateTitle: (checklist: Checklist, newTitle: string) => void;
-  onToggleItem: (checklist: Checklist, categoryId: string, itemId: string, field: 'checked' | 'skipped') => void;
-  onAddPhoto: (checklist: Checklist, categoryId: string, itemId: string, file: File) => void;
-  onDeletePhoto: (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => void;
-  onDelete: (id: string) => void;
-  onBack: () => void;
 }
 
 interface LightboxState {
@@ -26,16 +22,10 @@ interface LightboxState {
   canDelete: boolean;
 }
 
-const ChecklistView: React.FC<ChecklistViewProps> = ({
-  checklist,
-  onUpdateTitle,
-  onToggleItem,
-  onAddPhoto,
-  onDeletePhoto,
-  onDelete,
-  onBack,
-}) => {
+const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist }) => {
   const { t, language } = useLanguage();
+  const { updateChecklistTitle, toggleItem, addChecklistPhoto, deleteChecklistPhoto, deleteChecklist } = useChecklist();
+  const { closeChecklist } = useNavigation();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -43,7 +33,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
 
   const handleSaveTitle = () => {
     if (titleValue.trim() && titleValue !== checklist.title) {
-      onUpdateTitle(checklist, titleValue.trim());
+      updateChecklistTitle(checklist, titleValue.trim());
     } else {
       setTitleValue(checklist.title);
     }
@@ -76,7 +66,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
 
   const handleDeletePhoto = (photoId: string) => {
     if (lightbox) {
-      onDeletePhoto(checklist, lightbox.categoryId, lightbox.itemId, photoId);
+      deleteChecklistPhoto(checklist, lightbox.categoryId, lightbox.itemId, photoId);
       if (lightbox.photoIds.length <= 1) {
         setLightbox(null);
       }
@@ -84,14 +74,15 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
   };
 
   const handleDeleteChecklist = () => {
-    onDelete(checklist.id);
+    deleteChecklist(checklist.id);
     setShowDeleteConfirm(false);
+    closeChecklist();
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="btn-icon hover:text-accent">
+        <button onClick={closeChecklist} className="btn-icon hover:text-accent">
           <ChevronLeft size={20} />
         </button>
         <button
@@ -178,10 +169,10 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
                   <ChecklistItemRow
                     key={item.id}
                     item={item}
-                    onToggleChecked={() => onToggleItem(checklist, category.id, item.id, 'checked')}
-                    onToggleSkipped={() => onToggleItem(checklist, category.id, item.id, 'skipped')}
-                    onAddPhoto={(file) => onAddPhoto(checklist, category.id, item.id, file)}
-                    onDeletePhoto={(photoId) => onDeletePhoto(checklist, category.id, item.id, photoId)}
+                    onToggleChecked={() => toggleItem(checklist, category.id, item.id, 'checked')}
+                    onToggleSkipped={() => toggleItem(checklist, category.id, item.id, 'skipped')}
+                    onAddPhoto={(file) => addChecklistPhoto(checklist, category.id, item.id, file)}
+                    onDeletePhoto={(photoId) => deleteChecklistPhoto(checklist, category.id, item.id, photoId)}
                     onViewPhotos={(photoIds, startIndex) =>
                       handleViewPhotos(photoIds, startIndex, category.id, item.id, startIndex >= guideCount)
                     }
@@ -202,7 +193,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
           <CheckCircle size={40} className="text-success mx-auto mb-4" />
           <h3 className="text-base font-bold mb-2">{t('checklist_complete')}</h3>
           <p className="text-secondary text-sm mb-6">{t('checklist_done_msg')}</p>
-          <button onClick={onBack} className="btn btn-primary">
+          <button onClick={closeChecklist} className="btn btn-primary">
             {t('checklist_back')}
           </button>
         </motion.div>

@@ -28,6 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ConfirmDialog } from '@/shared/ui';
 
 import { useLanguage } from '@/shared/i18n';
+import { useTemplate } from '@/app/model/template-context';
 import { generateUUID } from '@/shared/lib';
 import photoStyles from '@/shared/styles/photo-zone.module.css';
 
@@ -35,8 +36,6 @@ interface TemplateEditorProps {
   template?: Template;
   onSave: (template: Template) => void;
   onCancel: () => void;
-  onAddPhoto: (itemId: string, file: File) => void;
-  onDeletePhoto: (itemId: string, photoId: string) => void;
 }
 
 interface SortableCategoryProps {
@@ -314,8 +313,9 @@ function SortableItem({
   );
 }
 
-const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCancel, onAddPhoto, onDeletePhoto }) => {
+const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCancel }) => {
   const { t } = useLanguage();
+  const { addTemplatePhoto, deleteTemplatePhoto } = useTemplate();
   const [title, setTitle] = useState(template?.title || '');
   const [description, setDescription] = useState(template?.description || '');
   const [categories, setCategories] = useState<Category[]>(template?.categories || []);
@@ -504,7 +504,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
   };
 
   const handleAddPhoto = async (categoryId: string, itemId: string, file: File) => {
-    const photoId = await onAddPhoto(itemId, file);
+    const photoId = await addTemplatePhoto(itemId, file);
     if (photoId) {
       setCategories(categories.map(c => {
         if (c.id === categoryId) {
@@ -524,7 +524,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
   };
 
   const handleDeletePhoto = async (categoryId: string, itemId: string, photoId: string) => {
-    await onDeletePhoto(itemId, photoId);
+    await deleteTemplatePhoto(itemId, photoId);
     setCategories(categories.map(c => {
       if (c.id === categoryId) {
         return {

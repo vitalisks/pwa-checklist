@@ -1,2 +1,2 @@
-export { useEditTemplate } from './use-edit-template';
-export type { EditingState } from './use-edit-template';
+export { useEditingState, EditingStateProvider } from './editing-context';
+export type { EditingState } from './editing-context';
