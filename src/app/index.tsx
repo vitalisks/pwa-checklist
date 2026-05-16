@@ -1,6 +1,6 @@
 import React from 'react';
 import { StorageProvider } from '@/shared/api';
-import { LanguageProvider } from '@/shared/i18n';
+import { I18nProvider } from '@/shared/i18n';
 import { TemplateProvider } from '@/app/model/template-context';
 import { ChecklistProvider } from '@/app/model/checklist-context';
 import { UtilityProvider } from '@/app/model/utility-context';
@@ -11,7 +11,7 @@ import AppRoutes from './ui/routes';
 const App: React.FC = () => {
   return (
     <StorageProvider>
-      <LanguageProvider>
+      <I18nProvider>
         <TemplateProvider>
           <ChecklistProvider>
             <UtilityProvider>
@@ -23,7 +23,7 @@ const App: React.FC = () => {
             </UtilityProvider>
           </ChecklistProvider>
         </TemplateProvider>
-      </LanguageProvider>
+      </I18nProvider>
     </StorageProvider>
   );
 };

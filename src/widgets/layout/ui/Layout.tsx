@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, LayoutGrid, Settings, Home } from 'lucide-react';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import { useNavigation } from '@/app/model/navigation-context';
 import styles from './Layout.module.css';
 
@@ -9,7 +9,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { activeTab, switchTab, searchQuery, setSearchQuery } = useNavigation();
 
   return (
@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Search className={styles['search-icon']} size={14} />
             <input
               type="text"
-              placeholder={t('find_placeholder')}
+              placeholder={t.common.findPlaceholder}
               className={styles['search-input']}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -38,9 +38,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       <nav className={styles['nav-bar']}>
         {[
-          { id: 'home', icon: Home, label: t('nav_home') },
-          { id: 'templates', icon: LayoutGrid, label: t('nav_templates') },
-          { id: 'settings', icon: Settings, label: t('nav_settings') },
+{ id: 'home', icon: Home, label: t.nav.home },
+        { id: 'templates', icon: LayoutGrid, label: t.nav.templates },
+        { id: 'settings', icon: Settings, label: t.nav.settings },
         ].map(({ id, icon: Icon, label }) => {
           const isActive = activeTab === id;
           return (

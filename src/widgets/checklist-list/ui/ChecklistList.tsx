@@ -3,7 +3,7 @@ import type { Checklist } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { ChevronRight, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/shared/ui';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import { useChecklist } from '@/app/model/checklist-context';
 import { useNavigation } from '@/app/model/navigation-context';
 
@@ -16,7 +16,7 @@ interface ChecklistListProps {
 const ChecklistList: React.FC<ChecklistListProps> = ({
   searchQuery: searchQueryProp,
 }) => {
-  const { t, language } = useLanguage();
+  const { t, language } = useTranslation();
   const { checklists, deleteChecklist } = useChecklist();
   const { openChecklist, searchQuery: navSearchQuery } = useNavigation();
 
@@ -60,9 +60,9 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
   };
 
   const filters: { key: Filter; label: string }[] = [
-    { key: 'all', label: t('filter_all') },
-    { key: 'active', label: t('filter_unfinished') },
-    { key: 'completed', label: t('filter_done') },
+    { key: 'all', label: t.filter.all },
+    { key: 'active', label: t.filter.unfinished },
+    { key: 'completed', label: t.filter.done },
   ];
 
   const locale =
@@ -73,7 +73,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold">{t('home_active_checklists')}</h2>
+        <h2 className="text-lg font-bold">{t.home.activeChecklists}</h2>
         <div className="flex gap-1.5">
           {filters.map(({ key, label }) => (
             <button
@@ -94,7 +94,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
       {filteredChecklists.length === 0 ? (
         <div className="card text-center py-8">
           <p className="text-secondary text-sm">
-            {searchQuery ? `${t('home_no_matches')} "${searchQuery}"` : t('home_no_checklists')}
+            {searchQuery ? `${t.home.noMatches} "${searchQuery}"` : t.home.noChecklists}
           </p>
         </div>
       ) : (
@@ -123,7 +123,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
                       </h3>
                       {checklist.status === 'completed' && (
                         <span className="badge badge-success shrink-0">
-                          {t('done')}
+                          {t.common.done}
                         </span>
                       )}
                     </div>
@@ -164,9 +164,9 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
 
       {deleteTarget && (
         <ConfirmDialog
-          title={t('delete_confirm_title')}
-          message={t('delete_confirm_msg')}
-          confirmLabel={t('delete_confirm_action')}
+          title={t.common.delete.confirmTitle}
+          message={t.common.delete.confirmMsg}
+          confirmLabel={t.common.delete.confirmAction}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
         />

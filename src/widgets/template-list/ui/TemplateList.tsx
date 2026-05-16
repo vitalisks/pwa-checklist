@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, Play } from 'lucide-react';
 import type { Template } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { ConfirmDialog } from '@/shared/ui';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import { useTemplate } from '@/app/model/template-context';
 import { useEditingState } from '@/features/edit-template';
 import { useNavigation } from '@/app/model/navigation-context';
@@ -17,7 +17,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
   searchQuery: searchQueryProp,
   hideHeader = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { templates, deleteTemplate } = useTemplate();
   const { startEditing } = useEditingState();
   const { searchQuery: navSearchQuery, createAndOpenChecklist, openIdeaFlow } = useNavigation();
@@ -48,14 +48,14 @@ const TemplateList: React.FC<TemplateListProps> = ({
     <div className="space-y-4">
       {!hideHeader && (
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-bold">{t('templates_title')}</h2>
+          <h2 className="text-lg font-bold">{t.templates.title}</h2>
           <div className="flex items-center gap-2">
             <button onClick={openIdeaFlow} className="btn btn-ghost py-1.5 px-3 text-accent border border-subtle text-xs">
-              {t('idea_button')}
+              {t.idea.button}
             </button>
             <button onClick={() => startEditing(null)} className="btn btn-primary py-1.5 px-3">
 
-              <Plus size={16} /> {t('templates_new')}
+              <Plus size={16} /> {t.templates.new}
             </button>
           </div>
         </div>
@@ -65,10 +65,10 @@ const TemplateList: React.FC<TemplateListProps> = ({
         {filteredTemplates.length === 0 ? (
           <div className="col-span-full card text-center py-8">
             <p className="text-secondary text-sm mb-3">
-              {searchQuery ? `${t('home_no_matches')} "${searchQuery}"` : t('home_no_templates')}
+              {searchQuery ? `${t.home.noMatches} "${searchQuery}"` : t.home.noTemplates}
             </p>
             <button onClick={() => startEditing(null)} className="btn btn-ghost text-accent py-1">
-              <Plus size={16} /> {t('home_add_template')}
+              <Plus size={16} /> {t.home.addTemplate}
             </button>
           </div>
         ) : (
@@ -83,10 +83,10 @@ const TemplateList: React.FC<TemplateListProps> = ({
               <div>
                 <h3 className="text-base font-semibold mb-1">{template.title}</h3>
                 <p className="text-sm text-secondary mb-3 line-clamp-1">
-                  {template.description || t('templates_no_desc')}
+                  {template.description || t.templates.noDesc}
                 </p>
                 <div className="section-label">
-                  {template.categories.reduce((acc, cat) => acc + cat.items.length, 0)} {t('templates_items')} &middot; {template.categories.length} {t('templates_categories')}
+                  {template.categories.reduce((acc, cat) => acc + cat.items.length, 0)} {t.templates.items} &middot; {template.categories.length} {t.templates.categories}
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-subtle">
@@ -94,7 +94,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
                   onClick={() => createAndOpenChecklist(template)}
                   className="btn btn-primary h-8 px-3 text-xs"
                 >
-                  <Play size={12} /> {t('templates_use')}
+                  <Play size={12} /> {t.templates.use}
                 </button>
                 <div className="flex items-center gap-1 ml-auto">
                   <button
@@ -118,9 +118,9 @@ const TemplateList: React.FC<TemplateListProps> = ({
 
       {deleteTarget && (
         <ConfirmDialog
-          title={t('delete_confirm_title')}
-          message={t('delete_confirm_msg')}
-          confirmLabel={t('delete_confirm_action')}
+          title={t.common.delete.confirmTitle}
+          message={t.common.delete.confirmMsg}
+          confirmLabel={t.common.delete.confirmAction}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
         />

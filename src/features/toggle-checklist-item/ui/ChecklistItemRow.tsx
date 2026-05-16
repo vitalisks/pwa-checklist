@@ -3,7 +3,7 @@ import { Check, Circle, CircleSlash, Camera, Image, X } from 'lucide-react';
 import type { ChecklistItem } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import itemStyles from './ChecklistItemRow.module.css';
 import photoStyles from '@/shared/styles/photo-zone.module.css';
 
@@ -24,7 +24,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   onDeletePhoto,
   onViewPhotos,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const storage = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [guideThumbs, setGuideThumbs] = useState<Record<string, string>>({});
@@ -140,7 +140,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
             </span>
             {item.skipped && (
               <span className="text-2xs text-warning font-semibold tracking-wide mt-0.5">
-                {t('checklist_item_skipped')}
+                {t.checklist.itemSkipped}
               </span>
             )}
           </div>
@@ -153,7 +153,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               fileInputRef.current?.click();
             }}
             className={photoStyles['photo-add-btn-sm']}
-            title={t('item_add_photo')}
+            title={t.item.addPhoto}
           >
             <Camera size={14} />
           </button>
@@ -161,10 +161,10 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
           <button
             onClick={(e) => { e.stopPropagation(); onToggleSkipped(); }}
             className={`px-2 py-1 text-2xs ${item.skipped ? 'bg-warning-subtle text-warning border-warning-subtle' : 'bg-surface-1 text-tertiary border-subtle'} border rounded-sm flex items-center gap-1`}
-            title={t('checklist_skip')}
+            title={t.checklist.skip}
           >
             <CircleSlash size={10} />
-            <span>{t('checklist_skip')}</span>
+            <span>{t.checklist.skip}</span>
           </button>
         </div>
       </div>
@@ -182,7 +182,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               onClick={(e) => { e.stopPropagation(); setDescExpanded(!descExpanded); }}
               className="text-2xs text-accent mt-0.5 hover:underline"
             >
-              {descExpanded ? t('see_less') : t('see_more')}
+              {descExpanded ? t.common.seeLess : t.common.seeMore}
             </button>
           )}
         </div>
@@ -193,7 +193,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
           {hasGuides && (
             <div>
               <div className="flex items-center gap-1.5 mb-1.5">
-                <div className={photoStyles['photo-zone-label']}>{t('item_guide_photo')}</div>
+                <div className={photoStyles['photo-zone-label']}>{t.item.guidePhoto}</div>
                 {loadingGuides && (
                   <div className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin" />
                 )}
@@ -208,7 +208,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
                     ) : (
                       <button onClick={() => onViewPhotos(allPhotoIds, i)} className={photoStyles['guide-photo-btn']}>
                         <img src={guideThumbs[pid]} alt="guide" className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`} />
-                        <span className={photoStyles['guide-badge']}>{t('item_guide_photo_badge')}</span>
+                        <span className={photoStyles['guide-badge']}>{t.item.guidePhotoBadge}</span>
                       </button>
                     )}
                   </div>
@@ -249,7 +249,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
           )}
           {hasCaptures && (
             <div className={(hasGuides || hasImageLinks) ? 'mt-2' : ''}>
-              <div className={photoStyles['photo-zone-label']}>{t('item_your_photo')}</div>
+              <div className={photoStyles['photo-zone-label']}>{t.item.yourPhoto}</div>
               <div className={photoStyles['photo-strip']}>
                 {captureIds.map((pid, i) => (
                   <div key={pid} className={photoStyles['photo-thumb-wrap']}>
@@ -265,7 +265,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
                     <button
                       onClick={() => onDeletePhoto(pid)}
                       className={photoStyles['photo-thumb-delete']}
-                      title={t('item_delete_photo')}
+                      title={t.item.deletePhoto}
                     >
                       <X size={10} />
                     </button>

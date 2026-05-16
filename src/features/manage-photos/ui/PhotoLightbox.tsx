@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import { ConfirmDialog } from '@/shared/ui';
 import styles from './PhotoLightbox.module.css';
 
@@ -14,7 +14,7 @@ interface PhotoLightboxProps {
 }
 
 const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onClose, onDelete }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const storage = useStorage();
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
@@ -114,7 +114,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
           <button
             onClick={(e) => { e.stopPropagation(); handleDeleteClick(); }}
             className={styles.btn}
-            title={t('item_delete_photo')}
+            title={t.item.deletePhoto}
           >
             <Trash2 size={20} />
           </button>
@@ -185,9 +185,9 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
 
       {showDeleteConfirm && (
         <ConfirmDialog
-          title={t('delete_confirm_title')}
-          message={t('delete_confirm_msg')}
-          confirmLabel={t('delete_confirm_action')}
+          title={t.common.delete.confirmTitle}
+          message={t.common.delete.confirmMsg}
+          confirmLabel={t.common.delete.confirmAction}
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
         />

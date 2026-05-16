@@ -25,7 +25,7 @@ src/
 │   └── react.svg
 │
 ├── app/                          # Application layer — initialization, providers, routing
-│   ├── index.tsx                 # Composes StorageProvider + LanguageProvider + AppRoutes
+│ ├── index.tsx # Composes StorageProvider + I18nProvider + AppRoutes
 │   ├── model/
 │   │   └── use-app-data.ts       # Central data orchestration hook (replaces old useTemplates + useChecklists)
 │   └── ui/
@@ -114,14 +114,18 @@ src/
 │   │   ├── index.ts
 │   │   ├── db.ts                # DB_NAME, DB_VERSION, STORES constants
 │   │   └── schemas.ts           # All domain types (Template, Checklist, ChecklistPhoto, etc.)
-│   ├── i18n/
-│   │   ├── index.ts
-│   │   ├── context.tsx          # LanguageProvider + useLanguage hook
-│   │   ├── translations.ts      # Aggregator + TranslationKeys type
-│   │   ├── en.ts                # English (~69 keys)
-│   │   ├── es.ts                # Spanish (~69 keys)
-│   │   ├── lv.ts                # Latvian (~69 keys)
-│   │   └── ru.ts                # Russian (~69 keys)
+│ ├── i18n/
+│ │ ├── index.ts
+│ │ ├── translations.ts # Translations interface + languageLoaders (import.meta.glob)
+│ │ ├── tr.ts # TrAccessor<T> recursive type + Tr alias
+│ │ ├── buildTr.ts # Proxy factory — buildTr(translations): Tr
+│ │ ├── I18nProvider.tsx # React Context provider + useI18nContext()
+│ │ ├── useTranslation.ts # Consumer hook — { t, language, changeLanguage }
+│ │ └── locales/ # One file per supported language, typed as Translations
+│ │     ├── en.ts
+│ │     ├── es.ts
+│ │     ├── lv.ts
+│ │     └── ru.ts
 │   ├── lib/
 │   │   ├── index.ts
 │   │   ├── image/

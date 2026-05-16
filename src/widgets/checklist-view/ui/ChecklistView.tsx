@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronLeft, CheckCircle, Trash2, Pencil, Check, X } from 'lucide-react';
 import type { Checklist } from '@/shared/config';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import { useChecklist } from '@/app/model/checklist-context';
 import { useNavigation } from '@/app/model/navigation-context';
 import { ConfirmDialog } from '@/shared/ui';
@@ -23,7 +23,7 @@ interface LightboxState {
 }
 
 const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist }) => {
-  const { t, language } = useLanguage();
+  const { t, language } = useTranslation();
   const { updateChecklistTitle, toggleItem, addChecklistPhoto, deleteChecklistPhoto, deleteChecklist } = useChecklist();
   const { closeChecklist } = useNavigation();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
@@ -109,7 +109,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist }) => {
                     value={titleValue}
                     onChange={(e) => setTitleValue(e.target.value)}
                     className="input font-semibold text-base w-full"
-                    placeholder={t('checklist_title_placeholder')}
+                    placeholder={t.checklist.titlePlaceholder}
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleSaveTitle();
@@ -118,22 +118,22 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist }) => {
                   />
                   <div className="flex items-center gap-2 mt-2">
                     <button onClick={handleSaveTitle} className="btn btn-primary text-xs py-1 px-2">
-                      <Check size={12} />{t('common_save')}
+                      <Check size={12} />{t.common.save}
                     </button>
                     <button onClick={handleCancelTitle} className="btn btn-ghost text-xs py-1 px-2">
-                      {t('common_cancel')}
+                      {t.common.cancel}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-1">
                   <h2 className="text-base font-semibold flex-1">
-                    {checklist.title || t('checklist_title_placeholder')}
+                    {checklist.title || t.checklist.titlePlaceholder}
                   </h2>
                   <button
                     onClick={() => setEditingTitle(true)}
                     className="btn-icon"
-                    title={t('checklist_edit_title')}
+                    title={t.checklist.editTitle}
                   >
                     <Pencil size={13} />
                   </button>
@@ -191,10 +191,10 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist }) => {
           className="card bg-success-subtle border-success-subtle text-center py-8"
         >
           <CheckCircle size={40} className="text-success mx-auto mb-4" />
-          <h3 className="text-base font-bold mb-2">{t('checklist_complete')}</h3>
-          <p className="text-secondary text-sm mb-6">{t('checklist_done_msg')}</p>
+<h3 className="text-base font-bold mb-2">{t.checklist.complete}</h3>
+      <p className="text-secondary text-sm mb-6">{t.checklist.doneMsg}</p>
           <button onClick={closeChecklist} className="btn btn-primary">
-            {t('checklist_back')}
+            {t.checklist.back}
           </button>
         </motion.div>
       )}
@@ -212,9 +212,9 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist }) => {
 
       {showDeleteConfirm && (
         <ConfirmDialog
-          title={t('delete_confirm_title')}
-          message={t('delete_confirm_msg')}
-          confirmLabel={t('delete_confirm_action')}
+          title={t.common.delete.confirmTitle}
+          message={t.common.delete.confirmMsg}
+          confirmLabel={t.common.delete.confirmAction}
           onConfirm={handleDeleteChecklist}
           onCancel={() => setShowDeleteConfirm(false)}
         />

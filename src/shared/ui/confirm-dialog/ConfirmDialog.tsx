@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import styles from './ConfirmDialog.module.css';
 
 interface ConfirmDialogProps {
@@ -20,7 +20,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   variant = 'danger',
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <motion.div
@@ -41,7 +41,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <div className={styles.message} style={{ whiteSpace: 'pre-line' }}>{message}</div>
         <div className={styles.actions}>
           <button onClick={onCancel} className="btn btn-ghost">
-            {t('action_cancel')}
+            {t.common.actionCancel}
           </button>
           <button onClick={onConfirm} className={`btn ${variant === 'warning' ? 'btn-primary' : 'btn-danger'}`}>
             {confirmLabel}

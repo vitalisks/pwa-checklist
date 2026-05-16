@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Mic, MicOff, Copy, ClipboardPaste, CheckCircle, AlertCircle, Save, Edit2 } from 'lucide-react';
 import type { Template } from '@/shared/config';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation, type Translations } from '@/shared/i18n';
 import { useIdeaFlow } from '../model';
 import { useEditingState } from '@/features/edit-template';
 import { useNavigation } from '@/app/model/navigation-context';
@@ -22,21 +22,21 @@ function buildCopyableError(error: ParseError): string {
   return '';
 }
 
-function errorMessageKey(kind: ParseError['kind']): 'idea_error_empty' | 'idea_error_clipboard_unavailable' | 'idea_error_invalid_json' | 'idea_error_invalid_schema' {
+function errorMessageKey(kind: ParseError['kind']): keyof Translations['idea'] {
   switch (kind) {
     case 'empty':
-      return 'idea_error_empty';
+      return 'errorEmpty';
     case 'clipboard_unavailable':
-      return 'idea_error_clipboard_unavailable';
+      return 'errorClipboardUnavailable';
     case 'invalid_json':
-      return 'idea_error_invalid_json';
+      return 'errorInvalidJson';
     case 'invalid_schema':
-      return 'idea_error_invalid_schema';
+      return 'errorInvalidSchema';
   }
 }
 
 const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
-  const { t, language } = useLanguage();
+  const { t, language } = useTranslation();
   const { startEditing } = useEditingState();
   const { closeIdeaFlow } = useNavigation();
   const {
@@ -77,11 +77,11 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <button onClick={closeIdeaFlow} className="btn-icon" aria-label={t('idea_back')}>
+        <button onClick={closeIdeaFlow} className="btn-icon" aria-label={t.idea.back}>
           <ArrowLeft size={18} />
         </button>
         <h2 className="text-lg font-bold">
-          {step === 'input' ? t('idea_view_title') : t('idea_preview_title')}
+          {step === 'input' ? t.idea.viewTitle : t.idea.previewTitle}
         </h2>
       </div>
 
@@ -94,7 +94,7 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
           <div className="card space-y-3">
             <textarea
               className="input min-h-[120px]"
-              placeholder={t('idea_placeholder')}
+              placeholder={t.idea.placeholder}
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
               autoFocus
@@ -105,13 +105,13 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
                 className={`btn btn-ghost text-xs gap-1.5 ${isListening ? 'text-accent' : ''}`}
               >
                 {isListening ? <MicOff size={14} /> : <Mic size={14} />}
-                {isListening ? t('idea_listening') : t('idea_voice_start')}
+                {isListening ? t.idea.listening : t.idea.voiceStart}
               </button>
             )}
           </div>
 
           <div className="card space-y-3">
-            <p className="text-xs text-secondary">{t('idea_copy_instruction')}</p>
+            <p className="text-xs text-secondary">{t.idea.copyInstruction}</p>
             <button
               onClick={handleCopy}
               disabled={!idea.trim()}
@@ -120,12 +120,12 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
               {promptCopied ? (
                 <>
                   <CheckCircle size={16} />
-                  {t('idea_copy_success')}
+                  {t.idea.copySuccess}
                 </>
               ) : (
                 <>
                   <Copy size={16} />
-                  {t('idea_create_template')}
+                  {t.idea.createTemplate}
                 </>
               )}
             </button>
@@ -137,14 +137,14 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
               className="btn btn-ghost w-full border border-subtle"
             >
               <ClipboardPaste size={16} />
-              {t('idea_paste_button')}
+              {t.idea.pasteButton}
             </button>
 
             {parseError && (
               <div className="space-y-2">
                 <div className="flex items-start gap-2 text-xs text-danger">
                   <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                  <span>{t(errorMessageKey(parseError.kind))}</span>
+                  <span>{t.idea[errorMessageKey(parseError.kind)]}</span>
                 </div>
                 {(parseError.kind === 'invalid_json' || parseError.kind === 'invalid_schema') && (
                   <button
@@ -152,7 +152,7 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
                     className="btn btn-ghost text-xs gap-1"
                   >
                     <Copy size={12} />
-                    {t('idea_copy_error')}
+                    {t.idea.copyError}
                   </button>
                 )}
               </div>
@@ -173,7 +173,7 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
               <p className="text-sm text-secondary">{parsedTemplate.description}</p>
             )}
             <p className="section-label mt-1">
-              {parsedTemplate.categories.reduce((acc, c) => acc + c.items.length, 0)} {t('templates_items')} &middot; {parsedTemplate.categories.length} {t('templates_categories')}
+              {parsedTemplate.categories.reduce((acc, c) => acc + c.items.length, 0)} {t.templates.items} &middot; {parsedTemplate.categories.length} {t.templates.categories}
             </p>
           </div>
 
@@ -194,11 +194,11 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
           <div className="flex gap-3">
             <button onClick={handleEdit} className="btn btn-ghost flex-1 border border-subtle">
               <Edit2 size={15} />
-              {t('idea_preview_edit')}
+              {t.idea.previewEdit}
             </button>
             <button onClick={handleSave} className="btn btn-primary flex-1">
               <Save size={15} />
-              {t('idea_preview_save')}
+              {t.idea.previewSave}
             </button>
           </div>
         </motion.div>

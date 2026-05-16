@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import { useUtility } from '@/app/model/utility-context';
 import { ConfirmDialog } from '@/shared/ui';
 import { Trash2, Download, Upload } from 'lucide-react';
 
 const SettingsView: React.FC = () => {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, changeLanguage, t } = useTranslation();
   const { handleExport, handleImport, handleClearData } = useUtility();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -40,7 +40,7 @@ const SettingsView: React.FC = () => {
       setImportMessage({ text: msg, error: false });
       setTimeout(() => window.location.reload(), 1500);
     } catch {
-      setImportMessage({ text: t('settings_import_error'), error: true });
+      setImportMessage({ text: t.settings.importError, error: true });
     } finally {
       setImporting(false);
     }
@@ -49,20 +49,20 @@ const SettingsView: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold">{t('settings_title')}</h2>
-        <p className="text-secondary text-sm mb-6">{t('settings_desc')}</p>
+<h2 className="text-lg font-bold">{t.settings.title}</h2>
+      <p className="text-secondary text-sm mb-6">{t.settings.desc}</p>
       </div>
 
       <div className="card space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold">{t('settings_language')}</h3>
+            <h3 className="text-sm font-semibold">{t.settings.language}</h3>
           </div>
           <div className="flex gap-1">
             {(['en', 'es', 'lv', 'ru'] as const).map((lang) => (
               <button
                 key={lang}
-                onClick={() => setLanguage(lang)}
+                onClick={() => changeLanguage(lang)}
                 className={`btn h-8 px-3 text-xs ${language === lang ? 'btn-primary' : 'btn-ghost'}`}
               >
                 {lang.toUpperCase()}
@@ -73,7 +73,7 @@ const SettingsView: React.FC = () => {
       </div>
 
       <div className="card space-y-3">
-        <h3 className="text-sm font-semibold">{t('settings_data')}</h3>
+        <h3 className="text-sm font-semibold">{t.settings.data}</h3>
 
         <input
           ref={fileInputRef}
@@ -90,7 +90,7 @@ const SettingsView: React.FC = () => {
             className="btn btn-soft flex-1"
           >
             <Download size={16} />
-            {exporting ? '…' : t('settings_export')}
+            {exporting ? '…' : t.settings.export}
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -98,7 +98,7 @@ const SettingsView: React.FC = () => {
             className="btn btn-soft flex-1"
           >
             <Upload size={16} />
-            {importing ? '…' : t('settings_import')}
+            {importing ? '…' : t.settings.import}
           </button>
         </div>
 
@@ -113,16 +113,16 @@ const SettingsView: React.FC = () => {
             onClick={() => setShowClearConfirm(true)}
             className="btn btn-danger w-full"
           >
-            <Trash2 size={16} /> {t('settings_clear_data')}
+            <Trash2 size={16} /> {t.settings.clearData}
           </button>
         </div>
       </div>
 
       {showClearConfirm && (
         <ConfirmDialog
-          title={t('settings_clear_data')}
-          message={t('settings_clear_warning')}
-          confirmLabel={t('delete_confirm_action')}
+          title={t.settings.clearData}
+          message={t.settings.clearWarning}
+          confirmLabel={t.common.delete.confirmAction}
           onConfirm={handleClear}
           onCancel={() => setShowClearConfirm(false)}
         />

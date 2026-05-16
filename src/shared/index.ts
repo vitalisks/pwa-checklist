@@ -14,6 +14,6 @@ export type {
 export { StorageProvider, useStorage } from './api';
 export type { StoragePort, ImportResult } from './api';
 export { IndexedDBAdapter } from './api';
-export { LanguageProvider, useLanguage } from './i18n';
-export type { Language, TranslationKeys } from './i18n';
+export { I18nProvider, useTranslation } from './i18n';
+export type { Translations, Tr } from './i18n';
 export { ConfirmDialog } from './ui';

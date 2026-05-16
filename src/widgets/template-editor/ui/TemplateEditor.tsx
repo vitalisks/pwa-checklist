@@ -27,7 +27,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ConfirmDialog } from '@/shared/ui';
 
-import { useLanguage } from '@/shared/i18n';
+import { useTranslation } from '@/shared/i18n';
 import { useTemplate } from '@/app/model/template-context';
 import { generateUUID } from '@/shared/lib';
 import photoStyles from '@/shared/styles/photo-zone.module.css';
@@ -65,7 +65,7 @@ function SortableCategory({
   onDeletePhoto,
   onItemDragEnd,
 }: SortableCategoryProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -101,11 +101,11 @@ function SortableCategory({
           className={`input font-semibold bg-surface-1 border-transparent focus:border-accent h-8 flex-1${showValidation && !category.name.trim() ? ' input-invalid' : ''}`}
           value={category.name}
           onChange={(e) => onUpdateName(category.id, e.target.value)}
-          placeholder={t('editor_cat_placeholder')}
+          placeholder={t.editor.catPlaceholder}
         />
         <button
           onClick={() => {
-            if (category.items.length === 0 || window.confirm(t('delete_confirm'))) {
+            if (category.items.length === 0 || window.confirm(t.common.delete.confirm)) {
               onRemove(category.id);
             }
           }}
@@ -138,7 +138,7 @@ function SortableCategory({
           onClick={() => onAddItem(category.id)}
           className="flex items-center gap-1.5 text-xs text-tertiary hover:text-primary transition-colors py-1 mt-1"
         >
-          <Plus size={12} /> {t('editor_add_item')}
+          <Plus size={12} /> {t.editor.addItem}
         </button>
       </div>
     </div>
@@ -166,7 +166,7 @@ function SortableItem({
   onAddPhoto,
   onDeletePhoto,
 }: SortableItemProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const storage = useStorage();
   const descRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -247,12 +247,12 @@ function SortableItem({
           className={`input h-7 flex-1 font-medium bg-transparent${showValidation && !item.text.trim() ? ' input-invalid' : ''}`}
           value={item.text}
           onChange={(e) => onUpdateText(categoryId, item.id, e.target.value)}
-          placeholder={t('editor_item_placeholder')}
+          placeholder={t.editor.itemPlaceholder}
         />
         <button
           onClick={() => fileInputRef.current?.click()}
           className="btn-icon w-5 h-5 text-tertiary hover:text-accent shrink-0"
-          title={t('item_add_photo')}
+          title={t.item.addPhoto}
         >
           <ImageIcon size={12} />
         </button>
@@ -270,7 +270,7 @@ function SortableItem({
           style={{ resize: 'none', overflow: 'hidden' }}
           value={item.description}
           onChange={(e) => onUpdateDescription(categoryId, item.id, e.target.value)}
-          placeholder={t('editor_item_desc_placeholder')}
+          placeholder={t.editor.itemDescPlaceholder}
         />
       )}
       {photoIds.length > 0 && (
@@ -289,7 +289,7 @@ function SortableItem({
               <button
                 onClick={() => onDeletePhoto(categoryId, item.id, pid)}
                 className={photoStyles['photo-thumb-delete']}
-                title={t('item_delete_photo')}
+                title={t.item.deletePhoto}
               >
                 <X size={10} />
               </button>
@@ -314,7 +314,7 @@ function SortableItem({
 }
 
 const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCancel }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { addTemplatePhoto, deleteTemplatePhoto } = useTemplate();
   const [title, setTitle] = useState(template?.title || '');
   const [description, setDescription] = useState(template?.description || '');
@@ -547,9 +547,9 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
 
   const buildValidationMessage = () => {
     const parts: string[] = [];
-    if (hasEmptyTitle()) parts.push(t('validation_title_required'));
-    if (hasEmptyCategoryNames()) parts.push(t('validation_category_name_required'));
-    if (hasEmptyItemTexts()) parts.push(t('validation_item_name_required'));
+    if (hasEmptyTitle()) parts.push(t.validation.titleRequired);
+    if (hasEmptyCategoryNames()) parts.push(t.validation.categoryNameRequired);
+    if (hasEmptyItemTexts()) parts.push(t.validation.itemNameRequired);
     return parts.join('\n');
   };
 
@@ -583,13 +583,13 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">{template ? t('editor_edit') : t('editor_new')}</h2>
+        <h2 className="text-lg font-bold">{template ? t.editor.edit : t.editor.new}</h2>
         <div className="flex gap-2">
           <button onClick={onCancel} className="btn btn-ghost">
-            {t('editor_cancel')}
+            {t.editor.cancel}
           </button>
           <button onClick={handleSave} className="btn btn-primary">
-            <Save size={16} /> {t('editor_save')}
+            <Save size={16} /> {t.editor.save}
           </button>
         </div>
       </div>
@@ -602,7 +602,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
               className={`input font-semibold text-base${showValidation && hasEmptyTitle() ? ' input-invalid' : ''}`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('editor_title_placeholder_required')}
+              placeholder={t.editor.titlePlaceholderRequired}
             />
           </div>
           <div>
@@ -610,14 +610,14 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
               className="input min-h-[50px]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('editor_desc_placeholder')}
+              placeholder={t.editor.descPlaceholder}
             />
           </div>
         </div>
       </div>
 
       <div className="mb-4">
-        <h3 className="section-label mb-2">{t('editor_cats_items_label')}</h3>
+        <h3 className="section-label mb-2">{t.editor.catsItemsLabel}</h3>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -651,18 +651,18 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
                 className="card border-dashed border-2 border-default hover:border-accent cursor-pointer flex items-center justify-center gap-2 text-tertiary hover:text-accent transition-colors h-10"
               >
                 <Plus size={16} />
-                <span className="text-sm font-medium">{t('editor_add_cat')}</span>
+                <span className="text-sm font-medium">{t.editor.addCat}</span>
               </button>
             </div>
           </SortableContext>
           <DragOverlay>
             {activeItem ? (
               <div className="bg-surface-2 border border-accent rounded px-2 py-1.5 shadow-lg opacity-90">
-                <span className="text-sm font-medium">{activeItem.text || t('editor_item_placeholder')}</span>
+                <span className="text-sm font-medium">{activeItem.text || t.editor.itemPlaceholder}</span>
               </div>
             ) : activeCategory ? (
               <div className="bg-surface-2 border border-accent rounded px-3 py-2 shadow-lg opacity-90">
-                <span className="text-sm font-semibold">{activeCategory.name || t('editor_cat_placeholder')}</span>
+                <span className="text-sm font-semibold">{activeCategory.name || t.editor.catPlaceholder}</span>
               </div>
             ) : null}
           </DragOverlay>
@@ -671,9 +671,9 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({ template, onSave, onCan
 
       {showRequiredDialog && (
         <ConfirmDialog
-          title={t('validation_required_title')}
+          title={t.validation.requiredTitle}
           message={buildValidationMessage()}
-          confirmLabel={t('action_ok')}
+          confirmLabel={t.common.ok}
           variant="warning"
           onConfirm={() => setShowRequiredDialog(false)}
           onCancel={() => setShowRequiredDialog(false)}
