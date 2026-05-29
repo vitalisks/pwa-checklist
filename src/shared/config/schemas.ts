@@ -53,7 +53,7 @@ export type ChecklistStatus = 'active' | 'completed';
 
 export interface Checklist {
   id: string;
-  templateId: string;
+  templateId?: string;
   templateTitle?: string;
   title: string;
   categories: ChecklistCategory[];

@@ -194,7 +194,7 @@ export class IndexedDBAdapter implements StoragePort {
     const date = new Date().toISOString().slice(0, 10);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `checkflow-backup-${date}.json`;
+    a.download = `moirai-backup-${date}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

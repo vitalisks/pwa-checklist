@@ -14,6 +14,7 @@ const lv: Translations = {
     noTemplates: 'Nav veidņu.',
     noChecklists: 'Nav sarakstu.',
     addTemplate: 'Pievienot Veidni',
+    newChecklist: 'Jauns Saraksts',
   },
   templates: {
     title: 'Veidnes',
@@ -48,6 +49,12 @@ const lv: Translations = {
     editTitle: 'Redigēt nosaukumu',
     titlePlaceholder: 'Ievadiet saraksta nosaukumu...',
     fromTemplate: 'No veidnes',
+    addCategory: 'Pievienot Kategoriju',
+    addItem: 'Pievienot Vienumu',
+    noItems: 'Vēl nav vienumu',
+    saveAsTemplate: 'Pārvērst par Veidni',
+    editMode: 'Rediģēt',
+    saveMode: 'Saglabāt',
   },
   common: {
     save: 'Saglabāt',

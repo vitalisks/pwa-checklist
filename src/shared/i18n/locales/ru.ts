@@ -14,6 +14,7 @@ const ru: Translations = {
     noTemplates: 'Нет шаблонов.',
     noChecklists: 'Нет списков.',
     addTemplate: 'Добавить Шаблон',
+    newChecklist: 'Новый Список',
   },
   templates: {
     title: 'Шаблоны',
@@ -48,6 +49,12 @@ const ru: Translations = {
     editTitle: 'Редактировать название',
     titlePlaceholder: 'Введите название списка...',
     fromTemplate: 'Из шаблона',
+    addCategory: 'Добавить Категорию',
+    addItem: 'Добавить Элемент',
+    noItems: 'Пока нет элементов',
+    saveAsTemplate: 'Преобразовать в Шаблон',
+    editMode: 'Править',
+    saveMode: 'Сохранить',
   },
   common: {
     save: 'Сохранить',

@@ -4,19 +4,22 @@ import { useStorage } from '@/shared/api';
 import { compressImage, generateUUID } from '@/shared/lib';
 import { ChecklistRepository } from '@/entities/checklist';
 import { PhotoRepository, buildChecklistPhotoId } from '@/entities/photo';
-import { createChecklistFromTemplate } from '@/features/create-checklist';
+import { createChecklistFromTemplate, createBlankChecklist, checklistToTemplate } from '@/features/create-checklist';
 import { toggleChecklistItem } from '@/features/toggle-checklist-item';
 import { migrateChecklistsFromLocalStorage } from '@/entities/checklist';
 
 interface ChecklistContextType {
   checklists: Checklist[];
   createChecklist: (template: Template) => Promise<Checklist | null>;
+  createBlankChecklist: (title?: string) => Promise<Checklist | null>;
+  persistChecklist: (checklist: Checklist) => Promise<void>;
   updateChecklist: (checklist: Checklist) => Promise<void>;
   updateChecklistTitle: (checklist: Checklist, newTitle: string) => Promise<void>;
   deleteChecklist: (id: string) => Promise<void>;
   toggleItem: (checklist: Checklist, categoryId: string, itemId: string, field: 'checked' | 'skipped') => void;
   addChecklistPhoto: (checklist: Checklist, categoryId: string, itemId: string, file: File) => Promise<Checklist>;
   deleteChecklistPhoto: (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => Promise<Checklist>;
+  convertChecklistToTemplate: (checklist: Checklist) => Template;
 }
 
 const ChecklistContext = createContext<ChecklistContextType | undefined>(undefined);
@@ -41,6 +44,15 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     load();
   }, []);
 
+  const persistChecklist = useCallback(async (checklist: Checklist) => {
+    try {
+      await checklistRepo.add(checklist);
+      setChecklists((prev) => [...prev, checklist]);
+    } catch (error) {
+      console.error('Failed to persist checklist:', error);
+    }
+  }, [checklistRepo]);
+
   const updateChecklist = useCallback(async (checklist: Checklist) => {
     try {
       await checklistRepo.update(checklist);
@@ -61,6 +73,22 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return null;
     }
   }, [checklistRepo]);
+
+  const createBlankChecklistFn = useCallback(async (title?: string): Promise<Checklist | null> => {
+    try {
+      const newChecklist = createBlankChecklist(title);
+      await checklistRepo.add(newChecklist);
+      setChecklists((prev) => [...prev, newChecklist]);
+      return newChecklist;
+    } catch (error) {
+      console.error('Failed to create blank checklist:', error);
+      return null;
+    }
+  }, [checklistRepo]);
+
+  const convertChecklistToTemplateFn = useCallback((checklist: Checklist): Template => {
+    return checklistToTemplate(checklist);
+  }, []);
 
   const updateChecklistTitle = useCallback(async (checklist: Checklist, newTitle: string) => {
     const updated = { ...checklist, title: newTitle };
@@ -145,10 +173,10 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [photoRepo, updateChecklist]);
 
   const value = useMemo(() => ({
-    checklists, createChecklist, updateChecklist, updateChecklistTitle,
-    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto,
-  }), [checklists, createChecklist, updateChecklist, updateChecklistTitle,
-    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto]);
+    checklists, createChecklist, createBlankChecklist: createBlankChecklistFn, persistChecklist, updateChecklist, updateChecklistTitle,
+    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, convertChecklistToTemplate: convertChecklistToTemplateFn,
+  }), [checklists, createChecklist, createBlankChecklistFn, persistChecklist, updateChecklist, updateChecklistTitle,
+    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, convertChecklistToTemplateFn]);
 
   return (
     <ChecklistContext.Provider value={value}>

@@ -46,6 +46,8 @@ export interface Translations {
     editTitle: string
     titlePlaceholder: string
     fromTemplate: string
+    editMode: string
+    saveMode: string
   }
   common: {
     save: string

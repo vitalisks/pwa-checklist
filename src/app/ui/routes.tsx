@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import type { Template } from '@/shared/config';
+import React, { useCallback } from 'react';
+import type { Template, Checklist } from '@/shared/config';
 import { useTemplate } from '@/app/model/template-context';
 import { useChecklist } from '@/app/model/checklist-context';
 import { useEditingState } from '@/features/edit-template';
@@ -14,12 +14,12 @@ import { IdeaFlowView } from '@/features/idea-flow';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AppRoutes: React.FC = () => {
-  const { editingTemplate, cancelEditing, finishEditing } = useEditingState();
+  const { editingTemplate, cancelEditing, finishEditing, startEditing } = useEditingState();
   const { saveTemplate } = useTemplate();
-  const { checklists } = useChecklist();
-  const { activeTab, viewingChecklistId, isIdeaFlowOpen, closeIdeaFlow } = useNavigation();
+  const { checklists, convertChecklistToTemplate } = useChecklist();
+  const { activeTab, viewingChecklistId, draftChecklist, isIdeaFlowOpen, closeIdeaFlow, closeChecklist, saveDraftChecklist } = useNavigation();
 
-  const viewingChecklist = checklists.find(c => c.id === viewingChecklistId) ?? null;
+  const viewingChecklist = draftChecklist ?? checklists.find(c => c.id === viewingChecklistId) ?? null;
 
   const handleSaveTemplate = useCallback(async (template: Template) => {
     await saveTemplate(template);
@@ -31,51 +31,45 @@ const AppRoutes: React.FC = () => {
     closeIdeaFlow();
   }, [saveTemplate, closeIdeaFlow]);
 
-  const memoizedContent = useMemo(() => {
-    if (viewingChecklist) {
-      return <ChecklistView checklist={viewingChecklist} />;
-    }
+  const handleSaveAsTemplate = useCallback(async (checklist: Checklist) => {
+    const template = convertChecklistToTemplate(checklist);
+    closeChecklist();
+    startEditing(template);
+  }, [convertChecklistToTemplate, closeChecklist, startEditing]);
 
-    if (isIdeaFlowOpen) {
-      return <IdeaFlowView onSave={handleIdeaFlowSave} />;
-    }
+  const handleSaveChecklist = useCallback(async (checklist: Checklist) => {
+    await saveDraftChecklist(checklist);
+  }, [saveDraftChecklist]);
 
-    if (editingTemplate !== undefined) {
-      return (
-        <TemplateEditor
-          template={editingTemplate || undefined}
-          onSave={handleSaveTemplate}
-          onCancel={cancelEditing}
-        />
-      );
-    }
-
-    switch (activeTab) {
-      case 'home':
-        return <HomeView />;
-      case 'templates':
-        return <TemplateList />;
-      case 'settings':
-        return <SettingsView />;
-      default:
-        return null;
-    }
-  }, [
-    viewingChecklist, isIdeaFlowOpen, editingTemplate, activeTab,
-    handleSaveTemplate, handleIdeaFlowSave, cancelEditing,
-  ]);
+  const key = activeTab + (editingTemplate !== undefined ? '-editing' : '') + (viewingChecklistId !== null ? '-viewing-' + viewingChecklistId : '') + (isIdeaFlowOpen ? '-idea' : '');
 
   return (
     <Layout>
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         <motion.div
-          key={activeTab + (editingTemplate !== undefined ? '-editing' : '') + (viewingChecklist ? '-viewing' : '') + (isIdeaFlowOpen ? '-idea' : '')}
+          key={key}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
         >
-          {memoizedContent}
+          {viewingChecklist ? (
+            <ChecklistView checklist={viewingChecklist} onSaveAsTemplate={handleSaveAsTemplate} defaultEdit={!!draftChecklist} onSaveChecklist={draftChecklist ? handleSaveChecklist : undefined} />
+          ) : isIdeaFlowOpen ? (
+            <IdeaFlowView onSave={handleIdeaFlowSave} />
+          ) : editingTemplate !== undefined ? (
+            <TemplateEditor
+              template={editingTemplate || undefined}
+              onSave={handleSaveTemplate}
+              onCancel={cancelEditing}
+            />
+          ) : activeTab === 'home' ? (
+            <HomeView />
+          ) : activeTab === 'templates' ? (
+            <TemplateList />
+          ) : activeTab === 'settings' ? (
+            <SettingsView />
+          ) : null}
         </motion.div>
       </AnimatePresence>
     </Layout>

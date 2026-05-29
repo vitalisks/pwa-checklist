@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Checklist } from '@/shared/config';
 import { motion } from 'framer-motion';
-import { ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronRight, Trash2, Plus } from 'lucide-react';
 import { ConfirmDialog } from '@/shared/ui';
 import { useTranslation } from '@/shared/i18n';
 import { useChecklist } from '@/app/model/checklist-context';
@@ -18,11 +18,11 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
 }) => {
   const { t, language } = useTranslation();
   const { checklists, deleteChecklist } = useChecklist();
-  const { openChecklist, searchQuery: navSearchQuery } = useNavigation();
+  const { openChecklist, createAndOpenBlankChecklist, searchQuery: navSearchQuery } = useNavigation();
 
   const searchQuery = searchQueryProp ?? navSearchQuery;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<Filter>('active');
 
   const filteredChecklists = checklists
     .filter(c => {
@@ -74,21 +74,28 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold">{t.home.activeChecklists}</h2>
-        <div className="flex gap-1.5">
-          {filters.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={`px-2 py-1 rounded-full text-2xs font-semibold border transition-colors ${
-                filter === key
-                  ? 'bg-accent-subtle text-accent border-accent'
-                  : 'bg-surface-1 text-tertiary border-subtle hover:text-primary'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={createAndOpenBlankChecklist}
+          className="btn btn-primary py-1.5 px-3"
+        >
+          <Plus size={16} /> {t.home.newChecklist}
+        </button>
+      </div>
+
+      <div className="flex gap-1.5">
+        {filters.map(({ key, label }) => (
+        <button
+          key={key}
+          onClick={() => setFilter(key)}
+          className={`px-4 py-1.5 rounded-full text-base font-semibold border transition-colors ${
+            filter === key
+              ? 'bg-accent-subtle text-accent border-accent'
+              : 'bg-surface-1 text-tertiary border-subtle hover:text-primary'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
       </div>
 
       {filteredChecklists.length === 0 ? (

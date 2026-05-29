@@ -14,6 +14,7 @@ const en: Translations = {
     noTemplates: 'No templates yet.',
     noChecklists: 'No checklists yet.',
     addTemplate: 'Add Template',
+    newChecklist: 'New Checklist',
   },
   templates: {
     title: 'Templates',
@@ -48,6 +49,12 @@ const en: Translations = {
     editTitle: 'Edit title',
     titlePlaceholder: 'Enter checklist title...',
     fromTemplate: 'From template',
+    addCategory: 'Add Category',
+    addItem: 'Add Item',
+    noItems: 'No items yet',
+    saveAsTemplate: 'Convert to Template',
+    editMode: 'Edit',
+    saveMode: 'Save',
   },
   common: {
     save: 'Save',

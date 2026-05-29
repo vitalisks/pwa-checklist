@@ -1,7 +1,7 @@
-# CheckFlow - Project Documentation for Agents
+# Moirai - Project Documentation for Agents
 
 ## 1. Project Overview
-**CheckFlow** is a modern, responsive Progressive Web Application (PWA) for managing checklists and templates. It is designed to be fast, offline-capable, and visually appealing with a glassmorphism aesthetic. The codebase follows **Feature-Sliced Design (FSD)** architecture.
+**Moirai** is a modern, responsive Progressive Web Application for managing checklists and templates. It is designed to be fast, offline-capable, and visually appealing with a glassmorphism aesthetic. The codebase follows **Feature-Sliced Design (FSD)** architecture.
 
 ## 2. Technology Stack
 * **Framework**: React 19 + TypeScript (no `tsconfig.json` — Vite handles TS internally)
@@ -12,7 +12,7 @@
 * **Icons**: Lucide React
 * **Animation**: Framer Motion
 * **Drag & Drop**: `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
-* **PWA**: `vite-plugin-pwa`
+* **PWA/Offline**: `vite-plugin-pwa`
 * **Path Alias**: `@/` maps to `src/` (configured in `vite.config.ts`)
 
 ## 3. Project Structure
@@ -25,9 +25,12 @@ src/
 │   └── react.svg
 │
 ├── app/                          # Application layer — initialization, providers, routing
-│ ├── index.tsx # Composes StorageProvider + I18nProvider + AppRoutes
+│   ├── index.tsx                 # Composes StorageProvider + I18nProvider + AppRoutes
 │   ├── model/
-│   │   └── use-app-data.ts       # Central data orchestration hook (replaces old useTemplates + useChecklists)
+│   │   ├── navigation-context.tsx # Tab state, search, checklist viewing, draft management
+│   │   ├── template-context.tsx   # Template CRUD via TemplateRepository
+│   │   ├── checklist-context.tsx  # Checklist CRUD, blank creation, convert to template
+│   │   └── use-app-data.ts       # Central data orchestration hook (legacy — prefer per-context hooks)
 │   └── ui/
 │       └── routes.tsx            # View routing + tab state + overlay management
 │
@@ -65,16 +68,23 @@ src/
 │   │   └── ui/
 │   │       ├── ChecklistItemRow.tsx
 │   │       └── ChecklistItemRow.module.css
-│ ├── edit-template/
-│ │ ├── index.ts # Exports useEditingState, EditingStateProvider, EditingState type
-│ │ └── model/
-│ │ ├── index.ts
-│ │ └── editing-context.tsx # EditingStateProvider + useEditingState() — idle/creating/editing
-│   ├── create-checklist/
-│   │   ├── index.ts             # Exports createChecklistFromTemplate (pure)
+│   ├── category-editor/
+│   │   ├── index.ts             # Exports CategoryEditCard, ItemEditRow + types
+│   │   └── ui/
+│   │       ├── CategoryEditCard.tsx  # Generic category card with render-prop items
+│   │       └── ItemEditRow.tsx       # Generic item row with drag handle + extras slot
+│   ├── edit-template/
+│   │   ├── index.ts             # Exports useEditingState, EditingStateProvider, EditingState type
 │   │   └── model/
 │   │       ├── index.ts
-│   │       └── create-from-template.ts  # Maps Template → Checklist
+│   │       └── editing-context.tsx # EditingStateProvider + useEditingState() — idle/creating/editing
+│   ├── create-checklist/
+│   │   ├── index.ts             # Exports createChecklistFromTemplate, createBlankChecklist, checklistToTemplate
+│   │   └── model/
+│   │       ├── index.ts
+│   │       ├── create-from-template.ts  # Maps Template → Checklist
+│   │       ├── create-blank-checklist.ts # Pure: creates Checklist with empty default category
+│   │       └── convert-checklist-to-template.ts  # Pure: Checklist → Template (reverse)
 │   ├── manage-photos/
 │   │   ├── index.ts             # Exports PhotoLightbox
 │   │   └── ui/
@@ -197,32 +207,29 @@ src/
 * **Entity repositories** (`entities/*/api/`): Each entity has a repository class that accepts `StoragePort` via constructor injection. Instantiated in `useAppData` using the storage from context.
 * **Migration**: `migrateTemplatesFromLocalStorage(storage)` and `migrateChecklistsFromLocalStorage(storage)` accept `StoragePort` as a parameter. Called in `useAppData` on startup.
 
-### 4.3. Data Orchestration (`useAppData`)
-* Located at `app/model/use-app-data.ts`.
-* Replaces the old `useTemplates` and `useChecklists` hooks.
-* Instantiates all three entity repositories using `useStorage()`.
-* Composes feature pure functions (`toggleChecklistItem`, `createChecklistFromTemplate`, `exportData`, etc.) with repository persistence.
-* Manages React state for `templates[]` and `checklists[]`.
-* Handles photo CRUD (add/delete with `PhotoRepository`, updating entity state).
-* Handles cascade deletion of photos when templates/checklists are deleted.
-* Exposes a flat API consumed by `routes.tsx`.
+### 4.3. Data Contexts (`TemplateContext` / `ChecklistContext`)
+* **TemplateContext** (`app/model/template-context.tsx`): Manages `templates[]` state via `TemplateRepository`. Exposes `saveTemplate`, `updateTemplate`, `deleteTemplate`.
+* **ChecklistContext** (`app/model/checklist-context.tsx`): Manages `checklists[]` state via `ChecklistRepository`. Exposes `createChecklist`, `createBlankChecklist`, `persistChecklist`, `updateChecklist`, `updateChecklistTitle`, `deleteChecklist`, `toggleItem`, `addChecklistPhoto`, `deleteChecklistPhoto`, `convertChecklistToTemplate`.
+* Both instantiates repositories using `useStorage()`.
+* `use-app-data.ts` is legacy — prefer consuming the per-context hooks via `useTemplate()` and `useChecklist()`.
 
 ### 4.4. Internationalization (I18n)
 * Custom lightweight system in `shared/i18n/`.
 * **Provider**: `<LanguageProvider>` wraps the app (composed in `app/index.tsx`).
-* **Hook**: `const { t, language, setLanguage } = useLanguage();`
+* **Hook**: `const { t, language, changeLanguage } = useTranslation();`
 * **Supported Languages**: English (`en`), Spanish (`es`), Latvian (`lv`), Russian (`ru`).
 * **Date Formatting**: Automatically adjusts `toLocaleDateString` based on selected language.
 * When adding a new string, update **ALL** language files (`en.ts`, `es.ts`, `lv.ts`, `ru.ts`).
-* Current key count: ~69 keys per language file.
+* Current key count: ~71 keys per language file.
 
 ### 4.5. Navigation & Routing
-* Navigation state lives in `NavigationContext` (`app/model/navigation-context.tsx`): `activeTab`, `searchQuery`, `viewingChecklistId`, `isIdeaFlowOpen` + actions (`switchTab`, `openChecklist`, `closeChecklist`, `createAndOpenChecklist`, `openIdeaFlow`, `closeIdeaFlow`).
+* Navigation state lives in `NavigationContext` (`app/model/navigation-context.tsx`): `activeTab`, `searchQuery`, `viewingChecklistId`, `draftChecklist`, `isIdeaFlowOpen` + actions (`switchTab`, `openChecklist`, `closeChecklist`, `createAndOpenChecklist`, `createAndOpenBlankChecklist`, `saveDraftChecklist`, `openIdeaFlow`, `closeIdeaFlow`).
+* **Draft flow**: `createAndOpenChecklist` and `createAndOpenBlankChecklist` create in-memory drafts (no persistence). The draft is stored in `draftChecklist` state. Explicit save calls `saveDraftChecklist` to persist. Cancel/close discards without saving.
 * Editing state lives in `EditingStateContext` (`features/edit-template/model/editing-context.tsx`): `idle`/`creating`/`editing` modes + `startEditing`, `cancelEditing`, `finishEditing`.
 * Data contexts: `TemplateContext` (`app/model/template-context.tsx`) and `ChecklistContext` (`app/model/checklist-context.tsx`) split the old `useAppData` responsibilities.
 * `app/ui/routes.tsx` consumes `useNavigation()`, `useEditingState()`, `useTemplate()`, `useChecklist()` to compose views.
 * Overlay views: `editingTemplate` (→ `TemplateEditor`), `viewingChecklist` (→ `ChecklistView`), `isIdeaFlowOpen` (→ `IdeaFlowView`) replace tab content.
-* Transitions handled by `Framer Motion` `AnimatePresence` for smooth switching.
+* Transitions handled by `Framer Motion` `AnimatePresence` with `mode="popLayout"` for smooth switching.
 
 ### 4.6. Styling (CSS Modules + Design Tokens — NOT Tailwind)
 * **Architecture**: 3-layer system — tokens → global utilities → component modules. No Tailwind, PostCSS, or CSS-in-JS.
@@ -248,17 +255,17 @@ Photos are stored in IndexedDB via `PhotoRepository.save` / `get` / `delete`. Im
 
 **Template editing**: `TemplateEditor` receives `onAddPhoto(itemId, file)` and `onDeletePhoto(itemId, photoId)` props. The caller (`routes.tsx` via `useAppData`) handles persistence through `PhotoRepository`.
 
-**Checklist execution**: `ChecklistItemRow` shows a guide strip and a captures strip. `useAppData` provides `addChecklistPhoto(checklist, categoryId, itemId, file)` and `deleteChecklistPhoto(checklist, categoryId, itemId, photoId)`.
+**Checklist execution**: `ChecklistItemRow` shows a guide strip and a captures strip. `useChecklist()` provides `addChecklistPhoto(checklist, categoryId, itemId, file)` and `deleteChecklistPhoto(checklist, categoryId, itemId, photoId)`.
 
 **Lightbox**: `PhotoLightbox` (from `features/manage-photos`) receives a flat `photoIds[]` array (guide IDs, then AI image link URLs, then capture IDs) and a `startIndex`. It receives an optional `onDelete` prop — set to `undefined` for guide photos so the delete button is hidden. External URLs (`http`/`https`) are used directly as `<img src>` instead of IndexedDB lookup; delete button is hidden for external URLs.
 
 **AI image links** (`TemplateItem.imageLinks` / `ChecklistItem.imageLinks`): External URLs from AI-generated templates. Rendered in the photo strip between guide and capture photos with an "AI" badge. Broken links show a placeholder. Propagated from `TemplateItem` to `ChecklistItem` at checklist creation time.
 
-**Cleanup**: Deleting a template or checklist cascades to delete all associated photos from IndexedDB (handled in `useAppData`).
+**Cleanup**: Deleting a template or checklist cascades to delete all associated photos from IndexedDB (handled in `ChecklistContext` / `TemplateContext`).
 
-### 4.8. Drag & Drop (TemplateEditor)
+### 4.8. Drag & Drop (TemplateEditor / ChecklistView)
 
-`TemplateEditor` (widget) uses `@dnd-kit` with `MouseSensor` (5px activation distance), `TouchSensor` (200ms delay), and `KeyboardSensor`.
+Both `TemplateEditor` (widget) and `ChecklistView` (in edit mode) use `@dnd-kit` with `MouseSensor` (5px activation distance), `TouchSensor` (200ms delay), and `KeyboardSensor`.
 
 * **Category reorder**: The outer `SortableContext` wraps category cards; dropping a category on another category reorders via `arrayMove`.
 * **Item reorder / cross-category move**: Each `SortableCategory` has its own inner `SortableContext` for items. When an item is dropped on another item, it moves to that position; when dropped on a category header, it appends to the end of that category.
@@ -268,7 +275,7 @@ Photos are stored in IndexedDB via `PhotoRepository.save` / `get` / `delete`. Im
 ### 4.9. Compatibility
 * **UUID Generation**: Always use `generateUUID()` from `@/shared/lib` instead of `crypto.randomUUID()` directly to support older browsers (Safari).
 * **Viewport**: Locked to `user-scalable=no` with `viewport-fit=cover` for safe-area on notch devices.
-* **Apple PWA meta**: `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style: black-translucent`.
+* **Apple meta tags**: `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style: black-translucent`.
 * **Speech API**: Ambient types in `shared/speech.d.ts` cover `SpeechRecognition` + `webkitSpeechRecognition` constructors.
 
 ## 5. Development Guidelines
@@ -307,17 +314,21 @@ Photos are stored in IndexedDB via `PhotoRepository.save` / `get` / `delete`. Im
 
 **ChecklistView inline title editing**: A pencil icon next to the checklist title opens an inline `<input>` with Save/Cancel buttons. `Enter` saves, `Escape` cancels. Calls `updateChecklistTitle(checklist, newTitle)` via `useAppData`.
 
+**ChecklistView editing mode**: An "Edit" button enters an in-place editing mode with drag-and-drop category/item reordering, inline category name and item text/description editing, and photo add/delete. Saving validates empty fields (shows `ConfirmDialog` warning). The "Save as Template" button converts the checklist to a template and opens the template editor for further editing.
+
+**ChecklistView draft mode**: When opening a blank checklist (or creating from template without persistence), the view opens in editing mode as a draft. Drafts are not persisted until the explicit "Save" button is clicked. Cancel/close discards the draft. Drafts use `onSaveChecklist` callback from `routes.tsx` which calls `saveDraftChecklist`.
+
 **ChecklistList filter tabs**: Pill buttons above the list — "All", "Unfinished" (status !== `'completed'`), "Done" (status === `'completed'`). Search and filter are combined (both applied simultaneously).
 
 **ChecklistItemRow description clamping**: Descriptions longer than 3 lines are clamped with a "See more" toggle. Uses `useLayoutEffect` + `scrollHeight > clientHeight` to detect overflow.
 
 ### 5.6. Known Issues (to fix)
 * `vite.config.ts` `includeAssets` references `favicon.ico`, `apple-touch-icon.png`, `mask-icon.svg` — none of these exist in `public/`. Only `icon.svg` is present.
-* PWA manifest has only an SVG icon — no PNG fallback icons.
+* Web app manifest has only an SVG icon — no PNG fallback icons.
 * Some empty directories exist from the migration: `entities/checklist/ui/`, `entities/template/ui/`, `features/inline-title-edit/model/`, `features/manage-photos/lib/`, `widgets/template-editor/lib/` — can be removed.
 
-### 5.7. PWA
-* The app is configured as a PWA with `vite-plugin-pwa`. Service worker auto-updates (`registerType: 'autoUpdate'`).
+### 5.7. Offline & Installability
+* The app is configured as an installable web app with `vite-plugin-pwa`. Service worker auto-updates (`registerType: 'autoUpdate'`).
 * No custom service worker — generated entirely at build time by `vite-plugin-pwa`.
 * No custom `workbox` configuration — uses `vite-plugin-pwa` defaults (precaching).
 * The build output is served via `npx serve dist` (script: `npm run serve`).

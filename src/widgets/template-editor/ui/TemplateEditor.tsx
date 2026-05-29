@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Save, GripVertical, Trash2, X, Image as ImageIcon } from 'lucide-react';
+import { CategoryEditCard } from '@/features/category-editor';
 import { useStorage } from '@/shared/api';
 import { PhotoLightbox } from '@/features/manage-photos';
 import type { Template, Category, TemplateItem } from '@/shared/config';
@@ -85,44 +86,29 @@ function SortableCategory({
     <div
       ref={setNodeRef}
       style={style}
-      className={`card ${isDragging ? 'z-50' : ''}`}
+      className={isDragging ? 'z-50' : ''}
     >
-      <div className="flex items-center gap-1.5 mb-2">
-        <button
-          {...attributes}
-          {...listeners}
-          style={{ touchAction: 'none' }}
-          className="btn-icon w-6 h-6 cursor-grab active:cursor-grabbing text-tertiary hover:text-primary shrink-0"
-        >
-          <GripVertical size={14} />
-        </button>
-        <input
-          type="text"
-          className={`input font-semibold bg-surface-1 border-transparent focus:border-accent h-8 flex-1${showValidation && !category.name.trim() ? ' input-invalid' : ''}`}
-          value={category.name}
-          onChange={(e) => onUpdateName(category.id, e.target.value)}
-          placeholder={t.editor.catPlaceholder}
-        />
-        <button
-          onClick={() => {
+      <SortableContext
+        items={category.items.map(i => i.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <CategoryEditCard
+          categoryId={category.id}
+          name={category.name}
+          items={category.items}
+          showValidation={showValidation}
+          categoryPlaceholder={t.editor.catPlaceholder}
+          addItemLabel={t.editor.addItem}
+          emptyItemsMessage=""
+          onUpdateName={(name) => onUpdateName(category.id, name)}
+          onRemove={() => {
             if (category.items.length === 0 || window.confirm(t.common.delete.confirm)) {
               onRemove(category.id);
             }
           }}
-          className="btn-icon w-6 h-6 btn-icon-danger shrink-0"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
-
-      <div className="space-y-1.5 pl-2.5 border-l border-subtle">
-        <SortableContext
-          items={category.items.map(i => i.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {category.items.map((item) => (
+          onAddItem={() => onAddItem(category.id)}
+          renderItem={(item) => (
             <SortableItem
-              key={item.id}
               item={item}
               categoryId={category.id}
               showValidation={showValidation}
@@ -132,15 +118,19 @@ function SortableCategory({
               onAddPhoto={onAddPhoto}
               onDeletePhoto={onDeletePhoto}
             />
-          ))}
-        </SortableContext>
-        <button
-          onClick={() => onAddItem(category.id)}
-          className="flex items-center gap-1.5 text-xs text-tertiary hover:text-primary transition-colors py-1 mt-1"
-        >
-          <Plus size={12} /> {t.editor.addItem}
-        </button>
-      </div>
+          )}
+          dragHandle={
+            <button
+              {...attributes}
+              {...listeners}
+              style={{ touchAction: 'none' }}
+              className="btn-icon w-6 h-6 cursor-grab active:cursor-grabbing text-tertiary hover:text-primary shrink-0"
+            >
+              <GripVertical size={14} />
+            </button>
+          }
+        />
+      </SortableContext>
     </div>
   );
 }

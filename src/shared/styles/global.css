@@ -8,7 +8,7 @@
 }
 
 /* The actual content surfaces (app-shell, header) paint their own --canvas
-   background. Making html/body/#root match the nav-bar means any iOS PWA
+    background. Making html/body/#root match the nav-bar means any iOS app
    safe-area region — whether rendered via the manifest, the html overscroll
    color, or a body strip behind the fixed nav — shows the nav-bar color. */
 html,

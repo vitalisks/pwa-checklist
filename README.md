@@ -1,8 +1,8 @@
-# CheckFlow - Modern Checklist PWA
+# Moirai - Modern Checklist App
 
-CheckFlow is a beautifully designed, offline-capable Progressive Web Application (PWA) for managing checklists and templates. Built with performance and user experience in mind, it features a sleek glassmorphism UI, robust state management, and multi-language support.
+Moirai is a beautifully designed, offline-capable Progressive Web Application for managing checklists and templates. Built with performance and user experience in mind, it features a sleek glassmorphism UI, robust state management, and multi-language support.
 
-![CheckFlow Project](https://via.placeholder.com/800x400?text=CheckFlow+Preview)
+![Moirai Project](https://via.placeholder.com/800x400?text=Moirai+Preview)
 
 ## ✨ key Features
 
@@ -59,7 +59,7 @@ CheckFlow is a beautifully designed, offline-capable Progressive Web Application
 
 ## 🌍 Language Support
 
-CheckFlow automatically detects your browser's language. You can also manually switch languages in the **Settings** tab.
+Moirai automatically detects your browser's language. You can also manually switch languages in the **Settings** tab.
 
 *   🇺🇸 English (Default)
 *   🇪🇸 Spanish

@@ -14,6 +14,7 @@ const es: Translations = {
     noTemplates: 'Aún no hay plantillas.',
     noChecklists: 'Aún no hay listas.',
     addTemplate: 'Añadir Plantilla',
+    newChecklist: 'Nueva Lista',
   },
   templates: {
     title: 'Plantillas',
@@ -48,6 +49,12 @@ const es: Translations = {
     editTitle: 'Editar título',
     titlePlaceholder: 'Introduce el título de la lista...',
     fromTemplate: 'De plantilla',
+    addCategory: 'Añadir Categoría',
+    addItem: 'Añadir Elemento',
+    noItems: 'Sin elementos aún',
+    saveAsTemplate: 'Convertir en Plantilla',
+    editMode: 'Editar',
+    saveMode: 'Guardar',
   },
   common: {
     save: 'Guardar',
