@@ -1,6 +1,6 @@
 export { I18nProvider, useI18nContext } from './I18nProvider'
 export { useTranslation } from './useTranslation'
 export { buildTr } from './buildTr'
-export { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, languageLoaders } from './translations'
-export type { Translations } from './translations'
+export { AVAILABLE_LANGUAGES, LANGUAGES, DEFAULT_LANGUAGE, languageLoaders } from './translations'
+export type { Translations, LanguageInfo } from './translations'
 export type { Tr, TrAccessor } from './tr'

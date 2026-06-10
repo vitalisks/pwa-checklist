@@ -29,7 +29,7 @@
 }
 
 .header-inner {
-    max-width: 760px;
+    max-width: var(--content-max-width);
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -81,16 +81,21 @@
 .nav-bar {
     position: fixed;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--content-max-width);
     z-index: 10;
     background: var(--surface-2);
     border-top: 1px solid var(--border-default);
+    padding: 8px 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.nav-inner {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 8px 0;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .nav-item {

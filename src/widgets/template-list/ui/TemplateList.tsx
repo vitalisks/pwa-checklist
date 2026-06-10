@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Play } from 'lucide-react';
+import { Plus, Edit2, Trash2, Play, Lightbulb } from 'lucide-react';
 import type { Template } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { ConfirmDialog } from '@/shared/ui';
@@ -50,8 +50,8 @@ const TemplateList: React.FC<TemplateListProps> = ({
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold">{t.templates.title}</h2>
           <div className="flex items-center gap-2">
-            <button onClick={openIdeaFlow} className="btn btn-ghost py-1.5 px-3 text-accent border border-subtle text-xs">
-              {t.idea.button}
+            <button onClick={openIdeaFlow} className="btn btn-ghost py-1.5 px-3 text-accent border border-subtle">
+              <Lightbulb size={16} /> {t.idea.button}
             </button>
             <button onClick={() => startEditing(null)} className="btn btn-primary py-1.5 px-3">
 

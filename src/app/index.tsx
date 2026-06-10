@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThemeProvider } from '@/shared/theme';
 import { StorageProvider } from '@/shared/api';
 import { I18nProvider } from '@/shared/i18n';
 import { TemplateProvider } from '@/app/model/template-context';
@@ -10,21 +11,23 @@ import AppRoutes from './ui/routes';
 
 const App: React.FC = () => {
   return (
-    <StorageProvider>
-      <I18nProvider>
-        <TemplateProvider>
-          <ChecklistProvider>
-            <UtilityProvider>
-              <EditingStateProvider>
-                <NavigationProvider>
-                  <AppRoutes />
-                </NavigationProvider>
-              </EditingStateProvider>
-            </UtilityProvider>
-          </ChecklistProvider>
-        </TemplateProvider>
-      </I18nProvider>
-    </StorageProvider>
+    <ThemeProvider>
+      <StorageProvider>
+        <I18nProvider>
+          <TemplateProvider>
+            <ChecklistProvider>
+              <UtilityProvider>
+                <EditingStateProvider>
+                  <NavigationProvider>
+                    <AppRoutes />
+                  </NavigationProvider>
+                </EditingStateProvider>
+              </UtilityProvider>
+            </ChecklistProvider>
+          </TemplateProvider>
+        </I18nProvider>
+      </StorageProvider>
+    </ThemeProvider>
   );
 };
 

@@ -1,7 +1,7 @@
 .photo-zone {
   margin-top: 8px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-1);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
@@ -22,12 +22,12 @@
   overflow-x: auto;
   padding: 2px 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(220, 215, 200, 0.08) transparent;
+  scrollbar-color: var(--border-default) transparent;
 }
 
 .photo-strip::-webkit-scrollbar { height: 3px; }
 .photo-strip::-webkit-scrollbar-thumb {
-  background: rgba(220, 215, 200, 0.08);
+  background: var(--border-default);
   border-radius: 2px;
 }
 
@@ -78,7 +78,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: var(--accent);
-  color: var(--canvas);
+  color: #fff;
   font-size: 7px;
   font-weight: 700;
   text-transform: uppercase;
@@ -94,8 +94,8 @@
   bottom: -2px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--text-muted);
-  color: var(--canvas);
+  background: var(--text-tertiary);
+  color: #fff;
   font-size: 7px;
   font-weight: 700;
   text-transform: uppercase;

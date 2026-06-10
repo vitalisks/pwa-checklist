@@ -34,26 +34,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       <nav className={styles["nav-bar"]}>
-        {[
-          { id: "home", icon: Home, label: t.nav.home },
-          { id: "templates", icon: LayoutGrid, label: t.nav.templates },
-          { id: "settings", icon: Settings, label: t.nav.settings },
-        ].map(({ id, icon: Icon, label }) => {
-          const isActive = activeTab === id;
-          return (
-            <button
-              key={id}
-              onClick={() => switchTab(id)}
-              className={styles["nav-item"]}
-              style={{
-                color: isActive ? "var(--accent)" : "var(--text-tertiary)",
-              }}
-            >
-              <Icon size={20} />
-              <span className={styles["nav-item-label"]}>{label}</span>
-            </button>
-          );
-        })}
+        <div className={styles["nav-inner"]}>
+          {[
+            { id: "home", icon: Home, label: t.nav.home },
+            { id: "templates", icon: LayoutGrid, label: t.nav.templates },
+            { id: "settings", icon: Settings, label: t.nav.settings },
+          ].map(({ id, icon: Icon, label }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => switchTab(id)}
+                className={styles["nav-item"]}
+                style={{
+                  color: isActive ? "var(--accent)" : "var(--text-tertiary)",
+                }}
+              >
+                <Icon size={20} />
+                <span className={styles["nav-item-label"]}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

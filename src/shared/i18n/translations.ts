@@ -12,6 +12,7 @@ export interface Translations {
     noTemplates: string
     noChecklists: string
     addTemplate: string
+    newChecklist: string
   }
   templates: {
     title: string
@@ -69,6 +70,10 @@ export interface Translations {
     title: string
     desc: string
     language: string
+    appearance: string
+    systemMode: string
+    darkMode: string
+    lightMode: string
     clearData: string
     clearWarning: string
     data: string
@@ -129,4 +134,31 @@ export const languageLoaders: Record<string, () => Promise<Translations>> = Obje
 )
 
 export const AVAILABLE_LANGUAGES = Object.keys(languageLoaders)
+
+export interface LanguageInfo {
+  code: string
+  name: string
+  nativeName: string
+}
+
+function capitalize(s: string): string {
+  if (!s) return s
+  return s.charAt(0).toLocaleUpperCase() + s.slice(1)
+}
+
+function getDisplayName(code: string, locale: string): string {
+  try {
+    const name = new Intl.DisplayNames([locale], { type: 'language', languageDisplay: 'standard' }).of(code)
+    return name ?? code
+  } catch {
+    return code
+  }
+}
+
+export const LANGUAGES: LanguageInfo[] = AVAILABLE_LANGUAGES.map(code => ({
+  code,
+  name: getDisplayName(code, 'en'),
+  nativeName: capitalize(getDisplayName(code, code)),
+}))
+
 export const DEFAULT_LANGUAGE = 'en'

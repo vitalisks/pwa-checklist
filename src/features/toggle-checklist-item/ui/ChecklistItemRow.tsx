@@ -125,7 +125,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
               <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center">
-                <Check size={12} style={{ color: 'var(--canvas)' }} strokeWidth={3} />
+                <Check size={12} color="#fff" strokeWidth={3} />
               </div>
             </motion.div>
           ) : item.skipped ? (
