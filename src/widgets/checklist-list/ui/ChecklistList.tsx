@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import type { Checklist } from '@/shared/config';
 import { motion } from 'framer-motion';
-import { ChevronRight, Trash2, Plus } from 'lucide-react';
+import { ChevronRight, Trash2, Plus, Download } from 'lucide-react';
 import { ConfirmDialog } from '@/shared/ui';
 import { useTranslation } from '@/shared/i18n';
 import { useChecklist } from '@/app/model/checklist-context';
 import { useNavigation } from '@/app/model/navigation-context';
+import { QuickShareButton } from '@/features/share';
+import { ExportChecklistDialog } from '@/features/export-checklist';
+import { useCollaboration } from '@/features/collaboration';
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -18,10 +21,12 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
 }) => {
   const { t, language } = useTranslation();
   const { checklists, deleteChecklist } = useChecklist();
+  const { isCollaborative } = useCollaboration();
   const { openChecklist, createAndOpenBlankChecklist, searchQuery: navSearchQuery } = useNavigation();
 
   const searchQuery = searchQueryProp ?? navSearchQuery;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [exportTarget, setExportTarget] = useState<Checklist | null>(null);
   const [filter, setFilter] = useState<Filter>('active');
 
   const filteredChecklists = checklists
@@ -133,6 +138,11 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
                           {t.common.done}
                         </span>
                       )}
+                      {isCollaborative(checklist.id) && (
+                        <span className="badge shrink-0" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)', border: '1px solid var(--accent)' }}>
+                          {t.collaboration.shared}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-2xs text-tertiary">
@@ -152,6 +162,17 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0">
                     <ChevronRight size={16} className="text-tertiary" />
+                    <QuickShareButton item={checklist} itemType="checklist" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExportTarget(checklist);
+                      }}
+                      className="btn-icon hover:text-accent"
+                      title="Export"
+                    >
+                      <Download size={14} />
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -176,6 +197,14 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
           confirmLabel={t.common.delete.confirmAction}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {exportTarget && (
+        <ExportChecklistDialog
+          checklist={exportTarget}
+          isOpen={!!exportTarget}
+          onClose={() => setExportTarget(null)}
         />
       )}
     </div>

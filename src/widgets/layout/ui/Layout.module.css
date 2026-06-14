@@ -4,7 +4,7 @@
     height: 100vh;
     height: -webkit-fill-available;
     height: 100dvh;
-    overflow: hidden;
+    overflow: clip;
     background: var(--canvas);
     padding-top: var(--header-height);
     min-height: 100vh;
@@ -14,7 +14,7 @@
 .scroll-area {
     flex: 1;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    position: relative;
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
 }
 

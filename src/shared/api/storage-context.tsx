@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useMemo } from 'react';
 import type { StoragePort } from './storage-port';
 import { IndexedDBAdapter } from './indexeddb-adapter';

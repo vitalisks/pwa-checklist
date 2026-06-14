@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
@@ -32,7 +34,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (language === DEFAULT_LANGUAGE) {
-      setTranslations(defaultTranslations)
+      setTranslations(defaultTranslations) // eslint-disable-line react-hooks/set-state-in-effect
       return
     }
     let cancelled = false

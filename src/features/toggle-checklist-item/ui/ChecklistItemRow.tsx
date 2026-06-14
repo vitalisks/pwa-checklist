@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
-import { Check, Circle, CircleSlash, Camera, Image, X } from 'lucide-react';
+import { Check, Circle, CircleSlash, Camera, Image } from 'lucide-react';
 import type { ChecklistItem } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
 import { useTranslation } from '@/shared/i18n';
+import { PhotoList } from '@/features/manage-photos';
 import itemStyles from './ChecklistItemRow.module.css';
 import photoStyles from '@/shared/styles/photo-zone.module.css';
 
@@ -33,7 +34,6 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   const [descExpanded, setDescExpanded] = useState(false);
   const [descClamped, setDescClamped] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
-  const isProcessed = item.checked || !!item.skipped;
   const hasDescription = !!item.description && item.description.length > 0;
   const guideIds = item.guidePhotoIds || [];
   const captureIds = item.photoIds || [];
@@ -42,18 +42,22 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   const imageLinks = item.imageLinks || [];
   const [brokenLinks, setBrokenLinks] = useState<Set<string>>(new Set());
   const hasImageLinks = imageLinks.length > 0;
+  const effectiveGuideThumbs = guideIds.length === 0 ? {} : guideThumbs;
+  const effectiveCaptureThumbs = captureIds.length === 0 ? {} : captureThumbs;
 
+  const guideIdsKey = guideIds.join(',');
   useEffect(() => {
-    if (guideIds.length === 0) { setGuideThumbs({}); return; }
+    if (guideIds.length === 0) return;
     let cancelled = false;
-    setLoadingGuides(true);
     const load = async () => {
+      setLoadingGuides(true);
       const map: Record<string, string> = {};
       for (const pid of guideIds) {
         try {
           const photo = await storage.getPhoto(pid);
           if (photo && !cancelled) map[pid] = photo.dataUrl;
         } catch {
+          // ignore
         }
       }
       if (!cancelled) {
@@ -63,10 +67,11 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
     };
     load();
     return () => { cancelled = true; };
-  }, [guideIds.join(',')]);
+  }, [guideIdsKey, storage]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const captureIdsKey = captureIds.join(',');
   useEffect(() => {
-    if (captureIds.length === 0) { setCaptureThumbs({}); return; }
+    if (captureIds.length === 0) return;
     let cancelled = false;
     const load = async () => {
       const map: Record<string, string> = {};
@@ -75,13 +80,14 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
           const photo = await storage.getPhoto(pid);
           if (photo && !cancelled) map[pid] = photo.dataUrl;
         } catch {
+          // ignore
         }
       }
       if (!cancelled) setCaptureThumbs(map);
     };
     load();
     return () => { cancelled = true; };
-  }, [captureIds.join(',')]);
+  }, [captureIdsKey, storage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useLayoutEffect(() => {
     const el = descRef.current;
@@ -201,13 +207,13 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               <div className={photoStyles['photo-strip']}>
                 {guideIds.map((pid, i) => (
                   <div key={pid} className={photoStyles['photo-thumb-wrap']}>
-                    {loadingGuides || !guideThumbs[pid] ? (
+                    {loadingGuides || !effectiveGuideThumbs[pid] ? (
                       <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']} ${photoStyles['photo-thumb-guide']}`}>
                         <Image size={12} />
                       </div>
                     ) : (
                       <button onClick={() => onViewPhotos(allPhotoIds, i)} className={photoStyles['guide-photo-btn']}>
-                        <img src={guideThumbs[pid]} alt="guide" className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`} />
+                        <img src={effectiveGuideThumbs[pid]} alt="guide" className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`} />
                         <span className={photoStyles['guide-badge']}>{t.item.guidePhotoBadge}</span>
                       </button>
                     )}
@@ -251,26 +257,12 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
             <div className={(hasGuides || hasImageLinks) ? 'mt-2' : ''}>
               <div className={photoStyles['photo-zone-label']}>{t.item.yourPhoto}</div>
               <div className={photoStyles['photo-strip']}>
-                {captureIds.map((pid, i) => (
-                  <div key={pid} className={photoStyles['photo-thumb-wrap']}>
-                    {captureThumbs[pid] ? (
-                      <button onClick={() => onViewPhotos(allPhotoIds, guideIds.length + imageLinks.length + i)}>
-                        <img src={captureThumbs[pid]} alt="capture" className={photoStyles['photo-thumb']} />
-                      </button>
-                    ) : (
-                      <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']}`}>
-                        <Image size={12} />
-                      </div>
-                    )}
-                    <button
-                      onClick={() => onDeletePhoto(pid)}
-                      className={photoStyles['photo-thumb-delete']}
-                      title={t.item.deletePhoto}
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
-                ))}
+                <PhotoList
+                  photoIds={captureIds}
+                  thumbs={effectiveCaptureThumbs}
+                  onView={(i) => onViewPhotos(allPhotoIds, guideIds.length + imageLinks.length + i)}
+                  onDelete={(pid) => onDeletePhoto(pid)}
+                />
               </div>
             </div>
           )}

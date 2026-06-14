@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { Template, ChecklistPhoto } from '@/shared/config';
 import { useStorage } from '@/shared/api';
@@ -38,7 +40,7 @@ export const TemplateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     };
     load();
-  }, []);
+  }, [storage, templateRepo]);
 
   const saveTemplate = useCallback(async (template: Template) => {
     try {

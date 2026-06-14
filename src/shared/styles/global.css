@@ -351,6 +351,9 @@ textarea.input {
 .justify-between {
     justify-content: space-between;
 }
+.justify-end {
+    justify-content: flex-end;
+}
 .flex-1 {
     flex: 1 1 0%;
 }

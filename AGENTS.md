@@ -8,6 +8,7 @@
 * **Build Tool**: Vite 7
 * **Architecture**: Feature-Sliced Design (FSD) — `app` → `widgets` → `features` → `entities` → `shared`
 * **Styling**: CSS Modules (`*.module.css`) + design tokens (`tokens.css`) + global utility classes (`global.css`) — **Tailwind is NOT used**
+* **Sharing**: Firebase (Firestore) — **conditional**, build-time flag via `VITE_FIREBASE_ENABLED`
 * **Storage**: IndexedDB via `StoragePort` interface + `IndexedDBAdapter` (dependency-injected through React Context)
 * **Icons**: Lucide React
 * **Animation**: Framer Motion
@@ -107,10 +108,46 @@ src/
 │   │   │   └── use-idea-flow.ts # Voice input + clipboard paste + parse state machine
 │   │   └── ui/
 │   │       └── IdeaFlowView.tsx
+│   ├── share/
+│   │   ├── index.ts             # Exports ShareProvider, useShare, UI components
+│   │   ├── config/
+│   │   │   └── index.ts         # isFirebaseEnabled() — guarded by VITE_FIREBASE_ENABLED
+│   │   ├── api/
+│   │   │   ├── index.ts
+│   │   │   ├── firebase-init.ts # Conditional Firebase app init (dynamic import)
+│   │   │   ├── fcm-service.ts   # FCM token mgmt + send via callable function
+│   │   │   └── firestore-service.ts # Payload CRUD + inbox listener
+│   │   ├── model/
+│   │   │   ├── index.ts
+│   │   │   ├── share-types.ts   # SharePayload, IncomingShare, ContactCode
+│   │   │   └── sharing-context.tsx # React context: contacts, send, accept, incoming
+│   │   └── ui/
+│   │       ├── index.ts
+│   │       ├── MyCodeCard.tsx       # Device code display + Web Share export
+│   │       ├── AddContactDialog.tsx # Paste contact code
+│   │       ├── ContactsList.tsx     # Manage contacts
+│   │       ├── SendShareDialog.tsx  # Pick contact, send item
+│   │       └── IncomingSharesList.tsx # Accept/dismiss received shares
+│   ├── entities/contact/        # Contact entity for sharing
+│   │   ├── index.ts
+│   │   ├── api/
+│   │   │   └── contact-repository.ts
+│   │   └── model/
+│   │       └── index.ts
 │   └── inline-title-edit/
 │       ├── index.ts             # Exports InlineTitleEdit component
 │       └── ui/
 │           └── InlineTitleEdit.tsx  # Inline editable title with pencil/save/cancel
+│
+├── functions/                   # Firebase Cloud Function for FCM v1
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── src/
+│       └── index.ts             # sendFcmMessage callable function
+│
+├── firebase.json                # Firebase project config
+├── firestore.rules              # Firestore security rules
+├── firestore.indexes.json
 │
 ├── shared/                      # Shared infrastructure — no business logic
 │   ├── index.ts                 # Barrel: re-exports all shared segments
@@ -133,7 +170,8 @@ src/
 │ │ ├── useTranslation.ts # Consumer hook — { t, language, changeLanguage }
 │ │ └── locales/ # One file per supported language, typed as Translations
 │ │     ├── en.ts
-│ │     ├── es.ts
+│ │     ├── et.ts
+│ │     ├── lt.ts
 │ │     ├── lv.ts
 │ │     └── ru.ts
 │   ├── lib/
@@ -217,10 +255,10 @@ src/
 * Custom lightweight system in `shared/i18n/`.
 * **Provider**: `<LanguageProvider>` wraps the app (composed in `app/index.tsx`).
 * **Hook**: `const { t, language, changeLanguage } = useTranslation();`
-* **Supported Languages**: English (`en`), Spanish (`es`), Latvian (`lv`), Russian (`ru`).
+* **Supported Languages**: English (`en`), Estonian (`et`), Lithuanian (`lt`), Latvian (`lv`), Russian (`ru`).
 * **Date Formatting**: Automatically adjusts `toLocaleDateString` based on selected language.
-* When adding a new string, update **ALL** language files (`en.ts`, `es.ts`, `lv.ts`, `ru.ts`).
-* Current key count: ~71 keys per language file.
+* When adding a new string, update **ALL** language files (`en.ts`, `et.ts`, `lt.ts`, `lv.ts`, `ru.ts`).
+* Current key count: ~80 keys per language file.
 
 ### 4.5. Navigation & Routing
 * Navigation state lives in `NavigationContext` (`app/model/navigation-context.tsx`): `activeTab`, `searchQuery`, `viewingChecklistId`, `draftChecklist`, `isIdeaFlowOpen` + actions (`switchTab`, `openChecklist`, `closeChecklist`, `createAndOpenChecklist`, `createAndOpenBlankChecklist`, `saveDraftChecklist`, `openIdeaFlow`, `closeIdeaFlow`).
@@ -272,7 +310,18 @@ Both `TemplateEditor` (widget) and `ChecklistView` (in edit mode) use `@dnd-kit`
 * `DragOverlay` renders a ghost element (category card or item row) during the drag.
 * SortableCategory and SortableItem are inline sub-components within TemplateEditor.tsx.
 
-### 4.9. Compatibility
+### 4.9. Sharing (Conditional Firebase)
+* **Build-time flag**: The sharing feature is gated by `VITE_FIREBASE_ENABLED=true`. If not set, the entire feature is tree-shaken and hidden.
+* **User discovery**: Each device generates a persistent `deviceId` (UUID). The "My Code" section in Settings displays a contact code string. **Web Share API** (`navigator.share()`) shares the code via AirDrop, Messages, etc. Manual copy/paste is the fallback.
+* **Contacts**: Users add contacts by pasting a contact code. Contacts are stored in IndexedDB via the `ContactRepository` (`entities/contact/`) in the `CONTACTS` store.
+* **Send flow**: Store the checklist/template payload in Firestore (`shared_payloads` collection). Push is best-effort — the data is always stored in Firestore.
+* **Receive flow**: A Firestore `onSnapshot` listener on `shared_payloads where recipientDeviceId == myDeviceId` detects new shares in real-time. The `IncomingSharesList` component shows pending items. "Accept" fetches the payload from Firestore, saves it as a new template/checklist, and deletes the Firestore document.
+* **Payload expiry**: Shared payloads have a 24-hour TTL (set via `expiresAt` field).
+* **Data Security**: No auth/accounts. The system is trust-based — anyone with your device's FCM token can send you data. Firestore rules allow reads/creates/deletes on `shared_payloads`.
+* **Env vars required**: `VITE_FIREBASE_ENABLED=true`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`.
+* **Deployment**: Only needs `firebase deploy --only firestore` for the rules (already deployed). No Cloud Functions needed — works on the Spark (free) plan.
+
+### 4.10. Compatibility
 * **UUID Generation**: Always use `generateUUID()` from `@/shared/lib` instead of `crypto.randomUUID()` directly to support older browsers (Safari).
 * **Viewport**: Locked to `user-scalable=no` with `viewport-fit=cover` for safe-area on notch devices.
 * **Apple meta tags**: `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style: black-translucent`.
@@ -328,7 +377,16 @@ Both `TemplateEditor` (widget) and `ChecklistView` (in edit mode) use `@dnd-kit`
 * Some empty directories exist from the migration: `entities/checklist/ui/`, `entities/template/ui/`, `features/inline-title-edit/model/`, `features/manage-photos/lib/`, `widgets/template-editor/lib/` — can be removed.
 
 ### 5.7. Offline & Installability
-* The app is configured as an installable web app with `vite-plugin-pwa`. Service worker auto-updates (`registerType: 'autoUpdate'`).
-* No custom service worker — generated entirely at build time by `vite-plugin-pwa`.
-* No custom `workbox` configuration — uses `vite-plugin-pwa` defaults (precaching).
+* The app is configured as an installable web app with `vite-plugin-pwa` using `injectManifest` strategy (`src/sw.js`). Service worker auto-updates (`registerType: 'autoUpdate'`).
+* The custom SW (`src/sw.js`) precaches assets via `precacheAndRoute(self.__WB_MANIFEST)` and handles `push` events for FCM background notifications + `notificationclick` for focusing the app.
 * The build output is served via `npx serve dist` (script: `npm run serve`).
+
+### 5.8. Verifying Changes (lint + typecheck)
+Always run both checks after making changes, before committing:
+
+```sh
+npm run lint       # ESLint — catches undeclared variables, unused vars, React hooks rules
+npm run typecheck  # tsc --noEmit — catches type mismatches, missing exports, dead code
+```
+
+The lint config covers `.ts/.tsx/.js/.jsx` files via `typescript-eslint`. The `tsconfig.json` uses `strict: true` with `noUnusedLocals` and `noUnusedParameters`. Build (`vite build`) is not affected by either — both are purely for development-time validation. Explicitly run them to catch issues early.

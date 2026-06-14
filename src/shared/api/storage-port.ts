@@ -2,6 +2,7 @@ import type {
   Template,
   Checklist,
   ChecklistPhoto,
+  Contact,
 } from '@/shared/config';
 
 export interface ImportResult {
@@ -28,6 +29,12 @@ export interface StoragePort {
   deletePhoto(itemId: string): Promise<void>;
   clearPhotos(): Promise<void>;
   getAllPhotos(): Promise<ChecklistPhoto[]>;
+
+  getContacts(): Promise<Contact[]>;
+  addContact(contact: Contact): Promise<void>;
+  updateContact(contact: Contact): Promise<void>;
+  deleteContact(deviceId: string): Promise<void>;
+  clearContacts(): Promise<void>;
 
   clearAll(): Promise<void>;
   exportAll(): Promise<void>;

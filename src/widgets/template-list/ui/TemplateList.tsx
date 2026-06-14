@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, Play, Lightbulb } from 'lucide-react';
-import type { Template } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { ConfirmDialog } from '@/shared/ui';
 import { useTranslation } from '@/shared/i18n';
 import { useTemplate } from '@/app/model/template-context';
 import { useEditingState } from '@/features/edit-template';
 import { useNavigation } from '@/app/model/navigation-context';
+import { QuickShareButton } from '@/features/share';
 
 interface TemplateListProps {
   searchQuery?: string;
@@ -97,6 +97,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
                   <Play size={12} /> {t.templates.use}
                 </button>
                 <div className="flex items-center gap-1 ml-auto">
+                  <QuickShareButton item={template} itemType="template" />
                   <button
                     onClick={() => startEditing(template)}
                     className="btn-icon"

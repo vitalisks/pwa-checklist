@@ -1,7 +1,8 @@
 import React from "react";
-import { Search, LayoutGrid, Settings, Home } from "lucide-react";
+import { Search, LayoutGrid, Settings, Home, Inbox } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
 import { useNavigation } from "@/app/model/navigation-context";
+import { useShare } from "@/features/share";
 import styles from "./Layout.module.css";
 
 interface LayoutProps {
@@ -11,6 +12,8 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { t } = useTranslation();
   const { activeTab, switchTab, searchQuery, setSearchQuery } = useNavigation();
+  const { incomingShares } = useShare();
+  const pendingCount = incomingShares.filter((s) => s.status === 'pending').length;
 
   return (
     <div className={styles["app-shell"]}>
@@ -38,8 +41,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {[
             { id: "home", icon: Home, label: t.nav.home },
             { id: "templates", icon: LayoutGrid, label: t.nav.templates },
+            { id: "inbox", icon: Inbox, label: t.nav.inbox, count: pendingCount },
             { id: "settings", icon: Settings, label: t.nav.settings },
-          ].map(({ id, icon: Icon, label }) => {
+          ].map(({ id, icon: Icon, label, count }) => {
             const isActive = activeTab === id;
             return (
               <button
@@ -50,7 +54,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   color: isActive ? "var(--accent)" : "var(--text-tertiary)",
                 }}
               >
-                <Icon size={20} />
+                <div style={{ position: "relative" }}>
+                  <Icon size={20} />
+                  {count != null && count > 0 && (
+                    <span
+                      className="badge badge-success"
+                      style={{
+                        position: "absolute",
+                        top: -6,
+                        right: -10,
+                        fontSize: 8,
+                        padding: "1px 4px",
+                        lineHeight: 1.3,
+                        minWidth: 14,
+                        textAlign: "center",
+                      }}
+                    >
+                      {count > 9 ? "9+" : count}
+                    </span>
+                  )}
+                </div>
                 <span className={styles["nav-item-label"]}>{label}</span>
               </button>
             );

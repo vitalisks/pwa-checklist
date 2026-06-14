@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/shared/i18n';
+import { DialogPortal } from '@/shared/ui/dialog-portal';
 import styles from './ConfirmDialog.module.css';
 
 interface ConfirmDialogProps {
@@ -23,6 +24,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const { t } = useTranslation();
 
   return (
+    <DialogPortal>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -49,6 +51,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
       </motion.div>
     </motion.div>
+    </DialogPortal>
   );
 };
 

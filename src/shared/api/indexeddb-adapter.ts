@@ -1,4 +1,4 @@
-import type { Template, Checklist, ChecklistPhoto } from '@/shared/config';
+import type { Template, Checklist, ChecklistPhoto, Contact } from '@/shared/config';
 import { DB_NAME, DB_VERSION, STORES } from '@/shared/config';
 import type { StoragePort, ImportResult } from './storage-port';
 
@@ -31,6 +31,9 @@ export class IndexedDBAdapter implements StoragePort {
         }
         if (!db.objectStoreNames.contains(STORES.PHOTOS)) {
           db.createObjectStore(STORES.PHOTOS, { keyPath: 'itemId' });
+        }
+        if (!db.objectStoreNames.contains(STORES.CONTACTS)) {
+          db.createObjectStore(STORES.CONTACTS, { keyPath: 'deviceId' });
         }
       };
     });
@@ -176,10 +179,31 @@ export class IndexedDBAdapter implements StoragePort {
     return this.getAll<ChecklistPhoto>(STORES.PHOTOS);
   }
 
+  async getContacts(): Promise<Contact[]> {
+    return this.getAll<Contact>(STORES.CONTACTS);
+  }
+
+  async addContact(contact: Contact): Promise<void> {
+    return this.add(STORES.CONTACTS, contact);
+  }
+
+  async updateContact(contact: Contact): Promise<void> {
+    return this.put(STORES.CONTACTS, contact);
+  }
+
+  async deleteContact(deviceId: string): Promise<void> {
+    return this.delete(STORES.CONTACTS, deviceId);
+  }
+
+  async clearContacts(): Promise<void> {
+    return this.clear(STORES.CONTACTS);
+  }
+
   async clearAll(): Promise<void> {
     await this.clearTemplates();
     await this.clearChecklists();
     await this.clearPhotos();
+    await this.clearContacts();
   }
 
   async exportAll(): Promise<void> {

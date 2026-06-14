@@ -2,6 +2,7 @@ export interface Translations {
   nav: {
     home: string
     active: string
+    inbox: string
     templates: string
     settings: string
   }
@@ -46,9 +47,26 @@ export interface Translations {
     itemSkipped: string
     editTitle: string
     titlePlaceholder: string
-    fromTemplate: string
+    addCategory: string
+    addItem: string
+    noItems: string
+    saveAsTemplate: string
     editMode: string
     saveMode: string
+  }
+  export: {
+    export: string
+    asImage: string
+    shareImage: string
+    generating: string
+    successImage: string
+    error: string
+    progress: string
+    fromTemplate: string
+    generatedBy: string
+    noCategories: string
+    comment: string
+    commentPlaceholder: string
   }
   common: {
     save: string
@@ -56,6 +74,7 @@ export interface Translations {
     actionCancel: string
     ok: string
     done: string
+    copied: string
     findPlaceholder: string
     seeMore: string
     seeLess: string
@@ -76,6 +95,8 @@ export interface Translations {
     lightMode: string
     clearData: string
     clearWarning: string
+    clearCache: string
+    clearCacheWarning: string
     data: string
     export: string
     import: string
@@ -121,6 +142,45 @@ export interface Translations {
     back: string
     listening: string
     voiceStart: string
+  }
+  share: {
+    myCode: string
+    yourName: string
+    namePlaceholder: string
+    shareCode: string
+    copyCode: string
+    codeDescription: string
+    addContact: string
+    contactName: string
+    pasteCode: string
+    codePlaceholder: string
+    noContacts: string
+    contacts: string
+    lastSent: string
+    sendTo: string
+    send: string
+    sentSuccess: string
+    sendError: string
+    incoming: string
+    accept: string
+    dismiss: string
+    notifications: string
+    notificationsOn: string
+    notificationsOff: string
+    noIncoming: string
+    setupFirebase: string
+  }
+  collaboration: {
+    shared: string
+    collaborate: string
+    started: string
+    pickContacts: string
+    noContactsForCollab: string
+    collaborateWith: string
+    addCollaborator: string
+    addedCollaborator: string
+    added: string
+    invitationLabel: string
   }
 }
 

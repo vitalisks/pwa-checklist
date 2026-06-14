@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { Template, Checklist, ChecklistPhoto } from '@/shared/config';
 import { useStorage } from '@/shared/api';
@@ -42,7 +44,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     };
     load();
-  }, []);
+  }, [checklistRepo, storage]);
 
   const persistChecklist = useCallback(async (checklist: Checklist) => {
     try {

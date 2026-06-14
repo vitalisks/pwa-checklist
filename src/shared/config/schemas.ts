@@ -61,3 +61,46 @@ export interface Checklist {
   createdAt: number;
   metadata: string;
 }
+
+export interface Contact {
+  deviceId: string;
+  name: string;
+  addedAt: number;
+  lastReceivedAt?: number;
+  lastSentAt?: number;
+}
+
+export interface CollaborativeItem {
+  id: string;
+  text: string;
+  description?: string;
+  checked: boolean;
+  skipped?: boolean;
+  photoIds?: string[];
+  guidePhotoIds?: string[];
+  imageLinks?: string[];
+  deleted?: true;
+  updatedAt: number;
+  updatedBy: string;
+}
+
+export interface CollaborativeCategory {
+  id: string;
+  name: string;
+  items: CollaborativeItem[];
+  deleted?: true;
+}
+
+export interface CollaborativeChecklist {
+  id: string;
+  title: string;
+  status: ChecklistStatus;
+  categories: CollaborativeCategory[];
+  ownerDeviceId: string;
+  collaborators: string[];
+  createdAt: number;
+  templateId?: string;
+  templateTitle?: string;
+  metadata: string;
+  updatedAt: number;
+}

@@ -1,9 +1,6 @@
-export type {
-  Template,
-  Category,
-  TemplateItem,
-  GeneratedFrom,
-} from '@/shared/config';
+import type { Template, Category, TemplateItem, GeneratedFrom } from '@/shared/config';
+
+export type { Template, Category, TemplateItem, GeneratedFrom };
 
 export interface TemplateValidationResult {
   isValid: boolean;

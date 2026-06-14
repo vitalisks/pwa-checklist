@@ -3,7 +3,7 @@ import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
 import { useTranslation } from '@/shared/i18n';
-import { ConfirmDialog } from '@/shared/ui';
+import { ConfirmDialog, DialogPortal } from '@/shared/ui';
 import styles from './PhotoLightbox.module.css';
 
 interface PhotoLightboxProps {
@@ -45,7 +45,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
     };
     load();
     return () => { cancelled = true; };
-  }, [currentIndex, photoIds]);
+  }, [currentIndex, photoIds, storage]);
 
   const goNext = () => {
     if (currentIndex < photoIds.length - 1) setCurrentIndex(currentIndex + 1);
@@ -100,6 +100,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
   };
 
   return (
+    <DialogPortal>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -193,6 +194,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
         />
       )}
     </motion.div>
+    </DialogPortal>
   );
 };
 

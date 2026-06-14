@@ -9,4 +9,8 @@ export type {
   ChecklistCategory,
   ChecklistStatus,
   Checklist,
+  Contact,
+  CollaborativeItem,
+  CollaborativeCategory,
+  CollaborativeChecklist,
 } from './schemas';

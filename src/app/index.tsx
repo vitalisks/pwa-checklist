@@ -7,6 +7,8 @@ import { ChecklistProvider } from '@/app/model/checklist-context';
 import { UtilityProvider } from '@/app/model/utility-context';
 import { EditingStateProvider } from '@/features/edit-template';
 import { NavigationProvider } from '@/app/model/navigation-context';
+import { ShareProvider } from '@/features/share';
+import { CollaborationProvider } from '@/features/collaboration';
 import AppRoutes from './ui/routes';
 
 const App: React.FC = () => {
@@ -17,11 +19,15 @@ const App: React.FC = () => {
           <TemplateProvider>
             <ChecklistProvider>
               <UtilityProvider>
-                <EditingStateProvider>
-                  <NavigationProvider>
-                    <AppRoutes />
-                  </NavigationProvider>
-                </EditingStateProvider>
+                <ShareProvider>
+                  <CollaborationProvider>
+                    <EditingStateProvider>
+                      <NavigationProvider>
+                        <AppRoutes />
+                      </NavigationProvider>
+                    </EditingStateProvider>
+                  </CollaborationProvider>
+                </ShareProvider>
               </UtilityProvider>
             </ChecklistProvider>
           </TemplateProvider>

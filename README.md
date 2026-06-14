@@ -57,6 +57,28 @@ Moirai is a beautifully designed, offline-capable Progressive Web Application fo
     npm run build
     ```
 
+### Optional: Firebase Setup (Sharing)
+
+To enable sharing checklists and templates between devices, you'll need a Firebase project:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/), create a project (or use an existing one).
+2. **Firestore** — enable Cloud Firestore (choose a region, start in test mode).
+3. **Web app** — in Project Settings → General → Your apps, click "Add app" → Web. Copy the `apiKey`, `projectId`, and `appId`.
+4. **Env vars** — copy `.env.example` to `.env` and fill in the values:
+   ```env
+   VITE_FIREBASE_ENABLED=true
+   VITE_FIREBASE_API_KEY=AIzaSy...
+   VITE_FIREBASE_PROJECT_ID=my-project
+   VITE_FIREBASE_APP_ID=1:123:web:abc
+   ```
+5. **Deploy rules** — this project includes `firestore.rules`. Deploy them:
+   ```bash
+   npx firebase-tools deploy --only firestore
+   ```
+   (First run `npx firebase-tools login` if needed.)
+
+Once set, the app will show a "My Code" section in Settings and a share icon on every template/checklist card. All data stays in the `shared_payloads` collection with a 24h TTL — no user accounts needed.
+
 ## 🌍 Language Support
 
 Moirai automatically detects your browser's language. You can also manually switch languages in the **Settings** tab.

@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import type { Template, Checklist } from '@/shared/config';
 import { useChecklist } from './checklist-context';

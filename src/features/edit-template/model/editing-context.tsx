@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import type { Template } from '@/shared/config';
 
@@ -8,7 +10,7 @@ export interface EditingState {
 
 interface EditingStateContextType {
   editingState: EditingState;
-  editingTemplate: Template | undefined;
+  editingTemplate: Template | null | undefined;
   isEditing: boolean;
   startEditing: (template: Template | null) => void;
   cancelEditing: () => void;

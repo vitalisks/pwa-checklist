@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useMemo } from 'react';
 import type { ImportResult } from '@/shared/api';
 import { useStorage } from '@/shared/api';
