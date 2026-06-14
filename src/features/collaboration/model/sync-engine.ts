@@ -32,6 +32,7 @@ export function toCollaborativeChecklist(
       id: cat.id,
       name: cat.name,
       items: cat.items.map((item) => toCollaborativeItem(item, ownerDeviceId)),
+      unwrapped: cat.unwrapped,
     })),
     ownerDeviceId,
     collaborators,
@@ -53,6 +54,7 @@ export function toChecklist(collab: CollaborativeChecklist): Checklist {
       .map((cat) => ({
         id: cat.id,
         name: cat.name,
+        unwrapped: cat.unwrapped,
         items: cat.items
           .filter((item) => !item.deleted)
           .map((item) => ({
@@ -101,6 +103,7 @@ function mergeCategory(local: CollaborativeCategory, remote: CollaborativeCatego
   return {
     ...local,
     name: remote.name,
+    unwrapped: remote.unwrapped,
     items: mergedItems,
   };
 }

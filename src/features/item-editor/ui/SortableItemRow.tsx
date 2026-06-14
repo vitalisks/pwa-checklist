@@ -6,7 +6,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import photoStyles from '@/shared/styles/photo-zone.module.css';
 
-export interface EditItemHandlers {
+interface SortableItemRowHandlers {
   updateText: (text: string) => void;
   updateDesc: (desc: string) => void;
   remove: () => void;
@@ -15,7 +15,7 @@ export interface EditItemHandlers {
   viewPhotos?: (photoIds: string[], startIndex: number) => void;
 }
 
-export interface EditItemProps {
+interface SortableItemRowProps {
   item: { id: string; text: string; description?: string };
   photoIds: string[];
   guidePhotoIds: string[];
@@ -23,12 +23,12 @@ export interface EditItemProps {
   showValidation: boolean;
   placeholder: string;
   descPlaceholder: string;
-  handlers: EditItemHandlers;
+  handlers: SortableItemRowHandlers;
 }
 
-export function EditItem({
+export function SortableItemRow({
   item, photoIds, guidePhotoIds, imageLinks, showValidation, placeholder, descPlaceholder, handlers,
-}: EditItemProps) {
+}: SortableItemRowProps) {
   const storage = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [guideThumbs, setGuideThumbs] = useState<Record<string, string>>({});

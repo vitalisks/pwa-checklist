@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
@@ -19,9 +19,9 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   useEffect(() => {
     const currentId = photoIds[currentIndex];
@@ -47,44 +47,39 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
     return () => { cancelled = true; };
   }, [currentIndex, photoIds, storage]);
 
-  const goNext = () => {
-    if (currentIndex < photoIds.length - 1) setCurrentIndex(currentIndex + 1);
-  };
+  const goNext = useCallback(() => {
+    if (currentIndex < photoIds.length - 1) setCurrentIndex(i => i + 1);
+  }, [currentIndex, photoIds.length]);
 
-  const goPrev = () => {
-    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
-  };
+  const goPrev = useCallback(() => {
+    if (currentIndex > 0) setCurrentIndex(i => i - 1);
+  }, [currentIndex]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
-  };
+  }, []);
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (touchStartX === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX - touchEndX;
-    const threshold = 50;
-
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
-        goNext();
-      } else {
-        goPrev();
-      }
-    }
+    const diff = touchStartX - e.changedTouches[0].clientX;
     setTouchStartX(null);
-  };
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goNext();
+      else goPrev();
+    }
+  }, [touchStartX, goNext, goPrev]);
 
-  const handleImageClick = () => {
-    setIsZoomed(!isZoomed);
-  };
+  const handleImageClick = useCallback(() => {
+    setIsZoomed(v => !v);
+  }, []);
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!onDelete) return;
     setShowDeleteConfirm(true);
-  };
+  }, [onDelete]);
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = useCallback(() => {
     if (!onDelete) return;
     onDelete(photoIds[currentIndex]);
     setShowDeleteConfirm(false);
@@ -93,11 +88,11 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
     } else if (currentIndex >= photoIds.length - 1) {
       setCurrentIndex(Math.max(0, currentIndex - 1));
     }
-  };
+  }, [onDelete, photoIds, currentIndex, onClose]);
 
-  const handleCancelDelete = () => {
-    setShowDeleteConfirm(false);
-  };
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < photoIds.length - 1;
+  const canDelete = onDelete && !photoIds[currentIndex]?.startsWith('http');
 
   return (
     <DialogPortal>
@@ -110,56 +105,58 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="absolute top-4 right-4 flex gap-3 z-10">
-        {onDelete && !photoIds[currentIndex]?.startsWith('http') && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleDeleteClick(); }}
-            className={styles.btn}
-            title={t.item.deletePhoto}
-          >
-            <Trash2 size={20} />
-          </button>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className={styles.btn}
-        >
+      <div className={styles.topBar}>
+        <button onClick={(e) => { e.stopPropagation(); onClose(); }} className={styles.iconBtn}>
           <X size={20} />
         </button>
+        <span className={styles.position}>{currentIndex + 1} / {photoIds.length}</span>
+        <div style={{ width: 36 }} />
       </div>
 
-      {currentIndex > 0 && (
-        <button
+      {hasPrev && (
+        <div
+          className={styles.navZone}
+          style={{ left: 0 }}
           onClick={(e) => { e.stopPropagation(); goPrev(); }}
-          className={styles['nav-btn']}
-          style={{ left: 16 }}
-        >
-          <ChevronLeft size={28} />
-        </button>
+        />
       )}
-
-      {currentIndex < photoIds.length - 1 && (
-        <button
+      {hasNext && (
+        <div
+          className={styles.navZone}
+          style={{ right: 0 }}
           onClick={(e) => { e.stopPropagation(); goNext(); }}
-          className={styles['nav-btn']}
-          style={{ right: 16 }}
-        >
-          <ChevronRight size={28} />
-        </button>
+        />
       )}
 
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
-        <div className="flex gap-1.5">
+      <div className={styles.bottomBar}>
+        <div className={styles.navGroup}>
+          <button
+            onClick={(e) => { e.stopPropagation(); goPrev(); }}
+            className={styles.navBtn}
+            style={{ opacity: hasPrev ? 1 : 0.2, pointerEvents: hasPrev ? 'auto' : 'none' }}
+          >
+            <ChevronLeft size={22} />
+          </button>
+        </div>
+
+        <div className={styles.dots}>
           {photoIds.map((_, i) => (
             <button
               key={i}
               onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
-              className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/40'}`}
+              className={`${styles.dot} ${i === currentIndex ? styles.dotActive : ''}`}
             />
           ))}
         </div>
-        <div className="text-white/50 text-xs">
-          {currentIndex + 1} / {photoIds.length}
+
+        <div className={styles.navGroup}>
+          <button
+            onClick={(e) => { e.stopPropagation(); goNext(); }}
+            className={styles.navBtn}
+            style={{ opacity: hasNext ? 1 : 0.2, pointerEvents: hasNext ? 'auto' : 'none' }}
+          >
+            <ChevronRight size={22} />
+          </button>
         </div>
       </div>
 
@@ -170,9 +167,9 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
       ) : dataUrl ? (
         <motion.img
           key={currentIndex}
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           src={dataUrl}
           alt="checklist item"
@@ -184,13 +181,26 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
         <div className="text-white/40 text-sm" onClick={(e) => e.stopPropagation()}>No image</div>
       )}
 
+      {canDelete && (
+        <button
+          onClick={handleDeleteClick}
+          className={styles.iconBtn}
+          style={{
+            position: 'fixed', right: 12, bottom: 72, zIndex: 101,
+          }}
+          title={t.item.deletePhoto}
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
+
       {showDeleteConfirm && (
         <ConfirmDialog
           title={t.common.delete.confirmTitle}
           message={t.common.delete.confirmMsg}
           confirmLabel={t.common.delete.confirmAction}
           onConfirm={handleConfirmDelete}
-          onCancel={handleCancelDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
         />
       )}
     </motion.div>

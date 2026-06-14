@@ -1,13 +1,13 @@
-import { GripVertical } from 'lucide-react';
-import type { ChecklistCategory } from '@/shared/config';
+import { GripVertical, UnfoldHorizontal } from 'lucide-react';
+import type { EditCategoryData } from '../model/types';
+import type { EditorHandlers } from '../model/types';
 import { CategoryEditCard } from '@/features/category-editor';
 import { CSS } from '@dnd-kit/utilities';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { EditItem, type EditItemHandlers } from './EditItem';
-import type { EditHandlers } from './EditContent';
+import { SortableItemRow } from './SortableItemRow';
 
-export interface SortableChecklistCategoryProps {
-  category: ChecklistCategory;
+interface SortableCategoryCardProps {
+  category: EditCategoryData;
   catValues: Record<string, string>;
   itemValues: Record<string, string>;
   descValues: Record<string, string>;
@@ -17,12 +17,13 @@ export interface SortableChecklistCategoryProps {
   emptyItemsMessage: string;
   itemPlaceholder: string;
   itemDescPlaceholder: string;
-  handlers: EditHandlers;
+  handlers: EditorHandlers;
+  onToggleUnwrap: (categoryId: string) => void;
 }
 
-export function SortableChecklistCategory({
-  category, catValues, itemValues, descValues, showValidation, categoryPlaceholder, addItemLabel, emptyItemsMessage, itemPlaceholder, itemDescPlaceholder, handlers,
-}: SortableChecklistCategoryProps) {
+export function SortableCategoryCard({
+  category, catValues, itemValues, descValues, showValidation, categoryPlaceholder, addItemLabel, emptyItemsMessage, itemPlaceholder, itemDescPlaceholder, handlers, onToggleUnwrap,
+}: SortableCategoryCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : undefined };
 
@@ -46,6 +47,14 @@ export function SortableChecklistCategory({
           onUpdateName={(name) => handlers.updateCategoryName(category.id, name)}
           onRemove={() => handlers.removeCategory(category.id)}
           onAddItem={() => handlers.addItem(category.id)}
+          unwrapped={category.unwrapped}
+          headerExtras={category.items.length > 0 ? (
+            <button onClick={() => onToggleUnwrap(category.id)}
+              className="btn-icon w-6 h-6 text-tertiary hover:text-accent shrink-0"
+              title={category.unwrapped ? 'Wrap' : 'Unwrap'}>
+              <UnfoldHorizontal size={14} />
+            </button>
+          ) : undefined}
           dragHandle={
             <button {...attributes} {...listeners} style={{ touchAction: 'none' }}
               className="btn-icon w-6 h-6 cursor-grab active:cursor-grabbing text-tertiary hover:text-primary shrink-0">
@@ -55,17 +64,8 @@ export function SortableChecklistCategory({
           renderItem={(item) => {
             const original = category.items.find(i => i.id === item.id);
             const guideCount = (original?.guidePhotoIds?.length || 0) + (original?.imageLinks?.length || 0);
-            const itemHandlers: EditItemHandlers = {
-              updateText: (text) => handlers.updateItemText(item.id, text),
-              updateDesc: (desc) => handlers.updateItemDesc(item.id, desc),
-              remove: () => handlers.removeItem(category.id, item.id),
-              addPhoto: (file) => handlers.addPhoto(category.id, item.id, file),
-              deletePhoto: (photoId) => handlers.deletePhoto(category.id, item.id, photoId),
-              viewPhotos: (photoIds, startIndex) =>
-                handlers.viewPhotos(photoIds, startIndex, category.id, item.id, startIndex >= guideCount),
-            };
             return (
-              <EditItem
+              <SortableItemRow
                 key={item.id}
                 item={item}
                 photoIds={original?.photoIds || []}
@@ -74,7 +74,15 @@ export function SortableChecklistCategory({
                 showValidation={showValidation}
                 placeholder={itemPlaceholder}
                 descPlaceholder={itemDescPlaceholder}
-                handlers={itemHandlers}
+                handlers={{
+                  updateText: (text) => handlers.updateItemText(item.id, text),
+                  updateDesc: (desc) => handlers.updateItemDesc(item.id, desc),
+                  remove: () => handlers.removeItem(category.id, item.id),
+                  addPhoto: (file) => handlers.addPhoto(category.id, item.id, file),
+                  deletePhoto: (photoId) => handlers.deletePhoto(category.id, item.id, photoId),
+                  viewPhotos: (photoIds, startIndex) =>
+                    handlers.viewPhotos(photoIds, startIndex, category.id, item.id, startIndex >= guideCount),
+                }}
               />
             );
           }}

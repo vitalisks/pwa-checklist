@@ -8,6 +8,11 @@ export function createBlankChecklist(title?: string): Checklist {
     status: 'active',
     createdAt: Date.now(),
     metadata: '',
-    categories: [],
+    categories: [{
+      id: generateUUID(),
+      name: '',
+      items: [],
+      unwrapped: true,
+    }],
   };
 }

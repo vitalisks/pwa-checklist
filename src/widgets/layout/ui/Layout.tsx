@@ -1,19 +1,32 @@
 import React from "react";
+import { Outlet, NavLink, useSearchParams } from "react-router-dom";
 import { Search, LayoutGrid, Settings, Home, Inbox } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
-import { useNavigation } from "@/app/model/navigation-context";
 import { useShare } from "@/features/share";
 import styles from "./Layout.module.css";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
+const navItems = [
+  { id: "home", path: "/", icon: Home },
+  { id: "templates", path: "/templates", icon: LayoutGrid },
+  { id: "inbox", path: "/inbox", icon: Inbox },
+  { id: "settings", path: "/settings", icon: Settings },
+] as const;
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC = () => {
   const { t } = useTranslation();
-  const { activeTab, switchTab, searchQuery, setSearchQuery } = useNavigation();
   const { incomingShares } = useShare();
   const pendingCount = incomingShares.filter((s) => s.status === 'pending').length;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q') || '';
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      setSearchParams({ q: value }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  };
 
   return (
     <div className={styles["app-shell"]}>
@@ -26,37 +39,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               placeholder={t.common.findPlaceholder}
               className={styles["search-input"]}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
         </div>
       </header>
 
       <main className={styles["scroll-area"]}>
-        <div className="container">{children}</div>
+        <div className="container">
+          <Outlet />
+        </div>
       </main>
 
       <nav className={styles["nav-bar"]}>
         <div className={styles["nav-inner"]}>
-          {[
-            { id: "home", icon: Home, label: t.nav.home },
-            { id: "templates", icon: LayoutGrid, label: t.nav.templates },
-            { id: "inbox", icon: Inbox, label: t.nav.inbox, count: pendingCount },
-            { id: "settings", icon: Settings, label: t.nav.settings },
-          ].map(({ id, icon: Icon, label, count }) => {
-            const isActive = activeTab === id;
+          {navItems.map(({ id, path, icon: Icon }) => {
+            const isInbox = id === 'inbox';
             return (
-              <button
+              <NavLink
                 key={id}
-                onClick={() => switchTab(id)}
+                to={path}
+                end={id === 'home'}
                 className={styles["nav-item"]}
-                style={{
+                style={({ isActive }) => ({
                   color: isActive ? "var(--accent)" : "var(--text-tertiary)",
-                }}
+                })}
               >
                 <div style={{ position: "relative" }}>
-                  <Icon size={20} />
-                  {count != null && count > 0 && (
+                  <Icon size={18} />
+                  {isInbox && pendingCount > 0 && (
                     <span
                       className="badge badge-success"
                       style={{
@@ -70,12 +81,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         textAlign: "center",
                       }}
                     >
-                      {count > 9 ? "9+" : count}
+                      {pendingCount > 9 ? "9+" : pendingCount}
                     </span>
                   )}
                 </div>
-                <span className={styles["nav-item-label"]}>{label}</span>
-              </button>
+                <span className={styles["nav-item-label"]}>
+                  {id === 'home' ? t.nav.home : id === 'templates' ? t.nav.templates : id === 'inbox' ? t.nav.inbox : t.nav.settings}
+                </span>
+              </NavLink>
             );
           })}
         </div>

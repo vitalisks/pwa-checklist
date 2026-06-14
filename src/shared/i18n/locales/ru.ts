@@ -55,6 +55,7 @@ const ru: Translations = {
     saveAsTemplate: 'Преобразовать в Шаблон',
     editMode: 'Править',
     saveMode: 'Сохранить',
+    unwrappedConfirm: 'Название категории и заголовок будут скрыты. Элементы будут отображаться без обёртки.',
   },
   common: {
     save: 'Сохранить',
@@ -98,6 +99,10 @@ const ru: Translations = {
     yourPhoto: 'Ваше Фото',
     photos: 'Фотографии',
     noPhotos: 'Пока нет фото',
+    comments: 'Заметки',
+    addComment: 'Добавить заметку',
+    commentPlaceholder: 'Написать заметку...',
+    deleteComment: 'Удалить заметку',
   },
   validation: {
     requiredTitle: 'Обязательные поля не заполнены',

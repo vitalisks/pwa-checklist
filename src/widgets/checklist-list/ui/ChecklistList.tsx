@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Checklist } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { ChevronRight, Trash2, Plus, Download } from 'lucide-react';
 import { ConfirmDialog } from '@/shared/ui';
 import { useTranslation } from '@/shared/i18n';
 import { useChecklist } from '@/app/model/checklist-context';
-import { useNavigation } from '@/app/model/navigation-context';
 import { QuickShareButton } from '@/features/share';
 import { ExportChecklistDialog } from '@/features/export-checklist';
 import { useCollaboration } from '@/features/collaboration';
+import { createBlankChecklist } from '@/features/create-checklist';
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -17,14 +18,12 @@ interface ChecklistListProps {
 }
 
 const ChecklistList: React.FC<ChecklistListProps> = ({
-  searchQuery: searchQueryProp,
+  searchQuery = '',
 }) => {
   const { t, language } = useTranslation();
+  const navigate = useNavigate();
   const { checklists, deleteChecklist } = useChecklist();
   const { isCollaborative } = useCollaboration();
-  const { openChecklist, createAndOpenBlankChecklist, searchQuery: navSearchQuery } = useNavigation();
-
-  const searchQuery = searchQueryProp ?? navSearchQuery;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [exportTarget, setExportTarget] = useState<Checklist | null>(null);
   const [filter, setFilter] = useState<Filter>('active');
@@ -57,6 +56,11 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
     return total > 0 ? Math.round((processed / total) * 100) : 0;
   };
 
+  const handleCreateBlank = async () => {
+    const draft = createBlankChecklist();
+    navigate('/checklist/new', { state: { draft } });
+  };
+
   const handleDeleteConfirm = () => {
     if (deleteTarget) {
       deleteChecklist(deleteTarget);
@@ -80,7 +84,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold">{t.home.activeChecklists}</h2>
         <button
-          onClick={createAndOpenBlankChecklist}
+          onClick={handleCreateBlank}
           className="btn btn-primary py-1.5 px-3"
         >
           <Plus size={16} /> {t.home.newChecklist}
@@ -119,7 +123,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
                 layout
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                onClick={() => openChecklist(checklist.id)}
+                onClick={() => navigate('/checklist/' + checklist.id)}
                 className="card card-hover cursor-pointer"
               >
                 <div className="flex items-center justify-between gap-3">

@@ -95,9 +95,11 @@ export const ChecklistReport: React.FC<ChecklistReportProps> = ({ checklist, lan
         ) : (
           checklist.categories.map(cat => (
             <section key={cat.id} className={styles.category}>
-              <div className={styles.catHeader}>
-                <h2 className={styles.catName}>{cat.name}</h2>
-              </div>
+              {!cat.unwrapped && (
+                <div className={styles.catHeader}>
+                  <h2 className={styles.catName}>{cat.name}</h2>
+                </div>
+              )}
               <div className={styles.catBody}>
                 {cat.items.length === 0 ? (
                   <p className={styles.empty}>{labels.noItems}</p>
@@ -114,6 +116,7 @@ export const ChecklistReport: React.FC<ChecklistReportProps> = ({ checklist, lan
                         : item.skipped
                           ? SKIP_ICON
                           : PENDING_ICON
+                      const itemComments = item.comments || []
                       return (
                         <li key={item.id} className={`${styles.item} ${statusClass}`}>
                           <span className={styles.itemIcon}>{icon}</span>
@@ -121,6 +124,18 @@ export const ChecklistReport: React.FC<ChecklistReportProps> = ({ checklist, lan
                             <span className={styles.itemText}>{item.text}</span>
                             {item.description && (
                               <p className={styles.itemDesc}>{item.description}</p>
+                            )}
+                            {itemComments.length > 0 && (
+                              <div className={styles.itemComments}>
+                                {itemComments.map(c => (
+                                  <div key={c.id} className={styles.itemComment}>
+                                    <p className={styles.itemCommentText}>{c.text}</p>
+                                    <span className={styles.itemCommentDate}>
+                                      {new Date(c.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </li>

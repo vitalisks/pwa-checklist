@@ -48,6 +48,7 @@ interface CollaborationContextType {
   updateItemText: (checklist: Checklist, categoryId: string, itemId: string, text: string, description: string) => void;
   addItem: (checklist: Checklist, categoryId: string) => CollaborativeItem | undefined;
   updateCategoryName: (checklist: Checklist, categoryId: string, name: string) => void;
+  toggleCategoryUnwrap: (checklist: Checklist, categoryId: string) => void;
   addPhoto: (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => void;
   deletePhoto: (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => void;
   deleteItem: (checklist: Checklist, categoryId: string, itemId: string) => void;
@@ -357,6 +358,20 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     writeToFirestore(updated);
   }, [deviceId, writeToFirestore]);
 
+  const toggleCategoryUnwrap = useCallback((checklist: Checklist, categoryId: string) => {
+    const existing = collabCache.current.get(checklist.id);
+    if (!existing) return;
+    const updated = {
+      ...existing,
+      categories: existing.categories.map((c) =>
+        c.id === categoryId ? { ...c, unwrapped: !c.unwrapped } : c,
+      ),
+      updatedAt: Date.now(),
+    };
+    collabCache.current.set(checklist.id, updated);
+    writeToFirestore(updated);
+  }, [writeToFirestore]);
+
   const syncChecklist = useCallback((checklist: Checklist) => {
     const existing = collabCache.current.get(checklist.id);
     if (!existing) return;
@@ -396,6 +411,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     updateItemText,
     addItem,
     updateCategoryName,
+    toggleCategoryUnwrap,
     addPhoto,
     deletePhoto,
     deleteItem,
@@ -405,7 +421,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
   }), [
     enabled, collaborativeIds, incomingInvites, isCollaborative, getCollaboratorIds, enableCollaboration,
     addCollaborator, acceptInvite, declineInvite, toggleItem, updateItemText, addItem,
-    updateCategoryName, addPhoto, deletePhoto, deleteItem, deleteCategory,
+    updateCategoryName, toggleCategoryUnwrap, addPhoto, deletePhoto, deleteItem, deleteCategory,
     syncChecklist, stopCollaboration,
   ]);
 

@@ -10,6 +10,7 @@ export interface Category {
   id: string;
   name: string;
   items: TemplateItem[];
+  unwrapped?: boolean;
 }
 
 export interface GeneratedFrom {
@@ -35,6 +36,13 @@ export interface ChecklistItem {
   photoIds?: string[];
   guidePhotoIds?: string[];
   imageLinks?: string[];
+  comments?: ChecklistComment[];
+}
+
+export interface ChecklistComment {
+  id: string;
+  text: string;
+  createdAt: number;
 }
 
 export interface ChecklistPhoto {
@@ -47,6 +55,7 @@ export interface ChecklistCategory {
   id: string;
   name: string;
   items: ChecklistItem[];
+  unwrapped?: boolean;
 }
 
 export type ChecklistStatus = 'active' | 'completed';
@@ -79,6 +88,7 @@ export interface CollaborativeItem {
   photoIds?: string[];
   guidePhotoIds?: string[];
   imageLinks?: string[];
+  comments?: ChecklistComment[];
   deleted?: true;
   updatedAt: number;
   updatedBy: string;
@@ -89,6 +99,7 @@ export interface CollaborativeCategory {
   name: string;
   items: CollaborativeItem[];
   deleted?: true;
+  unwrapped?: boolean;
 }
 
 export interface CollaborativeChecklist {

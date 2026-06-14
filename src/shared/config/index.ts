@@ -5,6 +5,7 @@ export type {
   GeneratedFrom,
   Template,
   ChecklistItem,
+  ChecklistComment,
   ChecklistPhoto,
   ChecklistCategory,
   ChecklistStatus,

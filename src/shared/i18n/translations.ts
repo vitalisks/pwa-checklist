@@ -53,6 +53,7 @@ export interface Translations {
     saveAsTemplate: string
     editMode: string
     saveMode: string
+    unwrappedConfirm: string
   }
   export: {
     export: string
@@ -110,6 +111,10 @@ export interface Translations {
     yourPhoto: string
     photos: string
     noPhotos: string
+    comments: string
+    addComment: string
+    commentPlaceholder: string
+    deleteComment: string
   }
   validation: {
     requiredTitle: string

@@ -1,20 +1,27 @@
-import React from 'react';
 import { ChevronLeft, Save } from 'lucide-react';
 import { useTranslation } from '@/shared/i18n';
-import styles from './ChecklistView.module.css';
 
-interface EditToolbarProps {
+interface ToolbarProps {
   isDraft: boolean;
   onBack: () => void;
   onCancel: () => void;
   onSave: () => void;
 }
 
-const EditToolbar: React.FC<EditToolbarProps> = ({ isDraft, onBack, onCancel, onSave }) => {
+export function Toolbar({ isDraft, onBack, onCancel, onSave }: ToolbarProps) {
   const { t } = useTranslation();
 
   return (
-    <div className={styles.fixedToolbar}>
+    <div style={{
+      position: 'fixed',
+      top: 'var(--header-height, 52px)',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '100%',
+      maxWidth: 'var(--content-max-width)',
+      background: 'var(--surface-1)',
+      zIndex: 10,
+    }}>
       <div className="flex items-center justify-between px-4 py-2">
         <button onClick={onBack} className="btn-icon hover:text-accent">
           <ChevronLeft size={20} />
@@ -30,6 +37,4 @@ const EditToolbar: React.FC<EditToolbarProps> = ({ isDraft, onBack, onCancel, on
       </div>
     </div>
   );
-};
-
-export default EditToolbar;
+}

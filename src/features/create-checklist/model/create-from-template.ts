@@ -13,6 +13,7 @@ export function createChecklistFromTemplate(template: Template): Checklist {
     categories: template.categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
+      unwrapped: cat.unwrapped,
       items: cat.items.map((i) => ({
         id: i.id,
         text: i.text,

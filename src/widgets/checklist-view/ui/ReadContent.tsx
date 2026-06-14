@@ -9,6 +9,8 @@ export interface ReadHandlers {
   addPhoto: (categoryId: string, itemId: string, file: File) => void;
   deletePhoto: (categoryId: string, itemId: string, photoId: string) => void;
   viewPhotos: (photoIds: string[], startIndex: number, categoryId: string, itemId: string, canDelete: boolean) => void;
+  addComment?: (categoryId: string, itemId: string, text: string) => void;
+  deleteComment?: (categoryId: string, itemId: string, commentId: string) => void;
   startAddItem: (categoryId: string) => void;
   newItemTextChange: (text: string) => void;
   confirmAddItem: (categoryId: string) => void;
@@ -42,10 +44,12 @@ function ReadContent({
     <div className="space-y-4">
       {currentChecklist.categories.map((category) => (
         <div key={category.id}>
-          <div className="space-y-3">
-            <div className="flex items-center gap-1.5">
-              <h3 className="section-label flex-1">{category.name}</h3>
-            </div>
+          <div className={category.unwrapped ? '' : 'space-y-3'}>
+            {!category.unwrapped && (
+              <div className="flex items-center gap-1.5">
+                <h3 className="section-label flex-1">{category.name}</h3>
+              </div>
+            )}
             <div className="space-y-2">
               {category.items.length === 0 ? (
                 <p className="text-xs text-tertiary italic">{t.checklist.noItems}</p>
@@ -64,6 +68,8 @@ function ReadContent({
                           onViewPhotos={(photoIds, startIndex) =>
                             handlers.viewPhotos(photoIds, startIndex, category.id, item.id, startIndex >= guideCount)
                           }
+                          onAddComment={handlers.addComment ? (text) => handlers.addComment!(category.id, item.id, text) : undefined}
+                          onDeleteComment={handlers.deleteComment ? (commentId) => handlers.deleteComment!(category.id, item.id, commentId) : undefined}
                         />
                       </div>
                     </div>

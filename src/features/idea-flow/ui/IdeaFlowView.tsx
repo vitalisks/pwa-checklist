@@ -3,13 +3,13 @@ import { ArrowLeft, Mic, MicOff, Copy, ClipboardPaste, CheckCircle, AlertCircle,
 import type { Template } from '@/shared/config';
 import { useTranslation, type Translations } from '@/shared/i18n';
 import { useIdeaFlow } from '../model';
-import { useEditingState } from '@/features/edit-template';
-import { useNavigation } from '@/app/model/navigation-context';
 import type { ParseError } from '../api';
 import { motion } from 'framer-motion';
 
 interface IdeaFlowViewProps {
   onSave: (template: Template) => void;
+  onEdit?: (template: Template) => void;
+  onClose?: () => void;
 }
 
 function buildCopyableError(error: ParseError): string {
@@ -35,10 +35,8 @@ function errorMessageKey(kind: ParseError['kind']): keyof Translations['idea'] {
   }
 }
 
-const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
+const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave, onEdit, onClose }) => {
   const { t, language } = useTranslation();
-  const { startEditing } = useEditingState();
-  const { closeIdeaFlow } = useNavigation();
   const {
     step,
     idea,
@@ -68,16 +66,15 @@ const IdeaFlowView: React.FC<IdeaFlowViewProps> = ({ onSave }) => {
   };
 
   const handleEdit = () => {
-    if (parsedTemplate) {
-      startEditing(parsedTemplate);
-      closeIdeaFlow();
+    if (parsedTemplate && onEdit) {
+      onEdit(parsedTemplate);
     }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <button onClick={closeIdeaFlow} className="btn-icon" aria-label={t.idea.back}>
+        <button onClick={onClose} className="btn-icon" aria-label={t.idea.back}>
           <ArrowLeft size={18} />
         </button>
         <h2 className="text-lg font-bold">

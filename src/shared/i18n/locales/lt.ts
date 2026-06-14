@@ -55,6 +55,7 @@ const lt: Translations = {
     saveAsTemplate: 'Konvertuoti į Šabloną',
     editMode: 'Redaguoti',
     saveMode: 'Išsaugoti',
+    unwrappedConfirm: 'Kategorijos pavadinimas ir antraštė bus paslėpti. Elementai bus rodomi be apvalkalo.',
   },
   common: {
     save: 'Išsaugoti',
@@ -98,6 +99,10 @@ const lt: Translations = {
     yourPhoto: 'Jūsų Nuotrauka',
     photos: 'Nuotraukos',
     noPhotos: 'Dar nėra nuotraukų',
+    comments: 'Pastabos',
+    addComment: 'Pridėti pastabą',
+    commentPlaceholder: 'Rašyti pastabą...',
+    deleteComment: 'Ištrinti pastabą',
   },
   validation: {
     requiredTitle: 'Privalomi Laukai Trūksta',

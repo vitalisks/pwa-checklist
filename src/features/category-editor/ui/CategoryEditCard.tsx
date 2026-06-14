@@ -20,6 +20,8 @@ export interface CategoryEditCardProps<ItemType extends EditableItem> {
   onAddItem: () => void;
   renderItem: (item: ItemType) => React.ReactNode;
   dragHandle?: React.ReactNode;
+  unwrapped?: boolean;
+  headerExtras?: React.ReactNode;
 }
 
 function CategoryEditCard<ItemType extends EditableItem = EditableItem>({
@@ -34,7 +36,30 @@ function CategoryEditCard<ItemType extends EditableItem = EditableItem>({
   onAddItem,
   renderItem,
   dragHandle,
+  unwrapped,
+  headerExtras,
 }: CategoryEditCardProps<ItemType>) {
+  if (unwrapped) {
+    return (
+      <div className="space-y-2">
+        {items.map((item) => (
+          <React.Fragment key={item.id}>
+            {renderItem(item)}
+          </React.Fragment>
+        ))}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onAddItem}
+            className="flex items-center gap-1.5 text-xs text-tertiary hover:text-primary transition-colors py-1"
+          >
+            <Plus size={12} /> {addItemLabel}
+          </button>
+          {headerExtras}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card space-y-3">
       <div className="flex items-center gap-2">
@@ -46,6 +71,7 @@ function CategoryEditCard<ItemType extends EditableItem = EditableItem>({
           onChange={(e) => onUpdateName(e.target.value)}
           placeholder={categoryPlaceholder}
         />
+        {headerExtras}
         <button onClick={onRemove} className="btn-icon w-6 h-6 btn-icon-danger shrink-0">
           <Trash2 size={14} />
         </button>

@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import type { Template, Checklist, ChecklistPhoto } from '@/shared/config';
+import type { Template, Checklist, ChecklistPhoto, ChecklistComment } from '@/shared/config';
 import { useStorage } from '@/shared/api';
 import { compressImage, generateUUID } from '@/shared/lib';
 import { ChecklistRepository } from '@/entities/checklist';
@@ -21,6 +21,8 @@ interface ChecklistContextType {
   toggleItem: (checklist: Checklist, categoryId: string, itemId: string, field: 'checked' | 'skipped') => void;
   addChecklistPhoto: (checklist: Checklist, categoryId: string, itemId: string, file: File) => Promise<Checklist>;
   deleteChecklistPhoto: (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => Promise<Checklist>;
+  addComment: (checklist: Checklist, categoryId: string, itemId: string, text: string) => Promise<Checklist>;
+  deleteComment: (checklist: Checklist, categoryId: string, itemId: string, commentId: string) => Promise<Checklist>;
   convertChecklistToTemplate: (checklist: Checklist) => Template;
 }
 
@@ -87,6 +89,45 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return null;
     }
   }, [checklistRepo]);
+
+  const addComment = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, text: string): Promise<Checklist> => {
+    const newComment: ChecklistComment = { id: generateUUID(), text, createdAt: Date.now() };
+    const newCategories = checklist.categories.map((cat) => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          items: cat.items.map((item) =>
+            item.id === itemId
+              ? { ...item, comments: [...(item.comments || []), newComment] }
+              : item
+          ),
+        };
+      }
+      return cat;
+    });
+    const updatedChecklist = { ...checklist, categories: newCategories };
+    await updateChecklist(updatedChecklist);
+    return updatedChecklist;
+  }, [updateChecklist]);
+
+  const deleteComment = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, commentId: string): Promise<Checklist> => {
+    const newCategories = checklist.categories.map((cat) => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          items: cat.items.map((item) =>
+            item.id === itemId
+              ? { ...item, comments: (item.comments || []).filter((c) => c.id !== commentId) }
+              : item
+          ),
+        };
+      }
+      return cat;
+    });
+    const updatedChecklist = { ...checklist, categories: newCategories };
+    await updateChecklist(updatedChecklist);
+    return updatedChecklist;
+  }, [updateChecklist]);
 
   const convertChecklistToTemplateFn = useCallback((checklist: Checklist): Template => {
     return checklistToTemplate(checklist);
@@ -176,9 +217,9 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const value = useMemo(() => ({
     checklists, createChecklist, createBlankChecklist: createBlankChecklistFn, persistChecklist, updateChecklist, updateChecklistTitle,
-    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, convertChecklistToTemplate: convertChecklistToTemplateFn,
+    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, addComment, deleteComment, convertChecklistToTemplate: convertChecklistToTemplateFn,
   }), [checklists, createChecklist, createBlankChecklistFn, persistChecklist, updateChecklist, updateChecklistTitle,
-    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, convertChecklistToTemplateFn]);
+    deleteChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, addComment, deleteComment, convertChecklistToTemplateFn]);
 
   return (
     <ChecklistContext.Provider value={value}>

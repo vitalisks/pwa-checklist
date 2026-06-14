@@ -234,6 +234,37 @@
   line-height: 1.4;
 }
 
+.itemComments {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.itemComment {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 8px;
+  background: #f9f7f3;
+  border-radius: 6px;
+  border-left: 2px solid #d4d0c8;
+}
+
+.itemCommentText {
+  font-size: 11px;
+  color: #5c5c4a;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.itemCommentDate {
+  font-size: 9px;
+  color: #bbb;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .empty {
   font-size: 12px;
   color: #bbb;

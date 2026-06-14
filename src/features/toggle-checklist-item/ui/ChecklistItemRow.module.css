@@ -19,3 +19,11 @@
 .cl-item-skipped {
   border-color: rgba(212, 168, 75, 0.2);
 }
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+}

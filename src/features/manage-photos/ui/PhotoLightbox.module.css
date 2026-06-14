@@ -5,38 +5,130 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.9);
+  background: #000;
 }
 
-.nav-btn {
+.topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 100%);
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px 18px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.55) 0%, transparent 100%);
+}
+
+.position {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.navGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.55);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.navBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.navBtn:active {
+  background: rgba(255,255,255,0.15);
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.dot:hover {
+  background: rgba(255,255,255,0.5);
+}
+
+.dotActive {
+  background: #fff;
+  width: 7px;
+  height: 7px;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.55);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.iconBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.iconBtn:active {
+  background: rgba(255,255,255,0.15);
+}
+
+.navZone {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 8px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  border: none;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  z-index: 1;
   cursor: pointer;
-  transition: background 0.12s var(--ease-out), color 0.12s var(--ease-out);
-}
-
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.btn {
-  padding: 10px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.6);
-  border: none;
-  cursor: pointer;
-  transition: background 0.12s var(--ease-out), color 0.12s var(--ease-out);
-}
-
-.btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
 }

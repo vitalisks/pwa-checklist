@@ -55,6 +55,7 @@ const en: Translations = {
     saveAsTemplate: 'Convert to Template',
     editMode: 'Edit',
     saveMode: 'Save',
+    unwrappedConfirm: 'The category name and header will be hidden. Items will appear without a wrapper.',
   },
   common: {
     save: 'Save',
@@ -98,6 +99,10 @@ const en: Translations = {
     yourPhoto: 'Your Photo',
     photos: 'Photos',
     noPhotos: 'No photos yet',
+    comments: 'Notes',
+    addComment: 'Add Note',
+    commentPlaceholder: 'Write a note...',
+    deleteComment: 'Delete Note',
   },
   validation: {
     requiredTitle: 'Required Fields Missing',

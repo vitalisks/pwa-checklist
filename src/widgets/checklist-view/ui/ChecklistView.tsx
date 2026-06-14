@@ -1,22 +1,18 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import type { Checklist, ChecklistCategory, ChecklistItem, ChecklistStatus } from '@/shared/config';
+import { useEditorState, Toolbar, DndEditor } from '@/features/item-editor';
 import { useTranslation } from '@/shared/i18n';
 import { useChecklist } from '@/app/model/checklist-context';
-import { useNavigation } from '@/app/model/navigation-context';
-import { useStorage } from '@/shared/api';
 import { ConfirmDialog } from '@/shared/ui';
 import { useShare, SendShareDialog, AddContactDialog } from '@/features/share';
 import { ExportChecklistDialog } from '@/features/export-checklist';
 import { PhotoLightbox } from '@/features/manage-photos';
 import { useCollaboration, CollaboratorPicker } from '@/features/collaboration';
 import { AnimatePresence } from 'framer-motion';
-import { generateUUID, compressImage } from '@/shared/lib';
-import { buildChecklistPhotoId } from '@/entities/photo';
+import { generateUUID } from '@/shared/lib';
 import { useChecklistViewDialogs } from './useChecklistViewDialogs';
-import EditToolbar from './EditToolbar';
 import ReadToolbar from './ReadToolbar';
 import CheckListTitleCard from './ChecklistTitleCard';
-import EditContent from './EditContent';
 import ReadContent from './ReadContent';
 import CompletedBanner from './CompletedBanner';
 import ShareSheet from './ShareSheet';
@@ -26,13 +22,12 @@ interface ChecklistViewProps {
   onSaveAsTemplate?: (checklist: Checklist) => void;
   defaultEdit?: boolean;
   onSaveChecklist?: (checklist: Checklist) => void;
+  onClose?: () => void;
 }
 
-const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTemplate, defaultEdit = false, onSaveChecklist }) => {
+const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTemplate, defaultEdit = false, onSaveChecklist, onClose }) => {
   const { t, language } = useTranslation();
-  const storage = useStorage();
-  const { updateChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, deleteChecklist } = useChecklist();
-  const { closeChecklist } = useNavigation();
+  const { updateChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, addComment, deleteComment, deleteChecklist } = useChecklist();
   const collaboration = useCollaboration();
   const isCollaborative = collaboration.isCollaborative(checklist.id);
   const share = useShare();
@@ -55,13 +50,9 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
   const [newItemText, setNewItemText] = useState('');
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [catValues, setCatValues] = useState<Record<string, string>>({});
-  const [itemValues, setItemValues] = useState<Record<string, string>>({});
-  const [descValues, setDescValues] = useState<Record<string, string>>({});
-  const [localChecklist, setLocalChecklist] = useState<Checklist | null>(defaultEdit ? { ...checklist } : null);
 
   const isDraft = defaultEdit && onSaveChecklist !== undefined;
-  const currentChecklist = localChecklist ?? checklist;
+  const currentChecklist = checklist;
 
   const {
     showCollaboratorPicker, setShowCollaboratorPicker,
@@ -78,8 +69,14 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
   } = useChecklistViewDialogs({
     currentChecklist,
     deleteChecklist,
-    closeChecklist,
+    closeChecklist: onClose ?? (() => {}),
     stopCollaboration: isCollaborative ? collaboration.stopCollaboration : undefined,
+  });
+
+  const editorState = useEditorState({
+    initialCategories: currentChecklist.categories,
+    photoIdPrefix: 'cl',
+    onViewPhotos: handleViewPhotos,
   });
 
   const { progress } = useMemo(() => {
@@ -94,93 +91,34 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
 
   useEffect(() => {
     if (isDraft) {
-      const cats: Record<string, string> = {};
-      const items: Record<string, string> = {};
-      const descs: Record<string, string> = {};
-      for (const cat of currentChecklist.categories) {
-        cats[cat.id] = cat.name;
-        for (const item of cat.items) {
-          items[item.id] = item.text;
-          if (item.description !== undefined) descs[item.id] = item.description;
-        }
-      }
-      setCatValues(cats); // eslint-disable-line react-hooks/set-state-in-effect
-      setItemValues(items);
-      setDescValues(descs);
+      editorState.initState(currentChecklist.categories);
     }
-  }, [currentChecklist.categories, isDraft]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const commit = useCallback((updated: Checklist) => setLocalChecklist(updated), []);
-
-  const handleEditPhotoAdd = useCallback(async (categoryId: string, itemId: string, file: File) => {
-    const uuid = generateUUID();
-    const photoId = buildChecklistPhotoId(itemId, uuid);
-    const dataUrl = await compressImage(file);
-    await storage.setPhoto({ itemId: photoId, dataUrl, updatedAt: Date.now() });
-    const newCategories = currentChecklist.categories.map((cat) =>
-      cat.id === categoryId
-        ? { ...cat, items: cat.items.map((item) => item.id === itemId ? { ...item, photoIds: [...(item.photoIds || []), photoId] } : item) }
-        : cat
-    );
-    const updated = { ...currentChecklist, categories: newCategories };
-    commit(updated);
-    if (collaboration.isCollaborative(updated.id)) collaboration.syncChecklist(updated);
-  }, [currentChecklist, commit, storage, collaboration]);
-
-  const handleEditPhotoDelete = useCallback(async (categoryId: string, itemId: string, photoId: string) => {
-    await storage.deletePhoto(photoId);
-    const newCategories = currentChecklist.categories.map((cat) =>
-      cat.id === categoryId
-        ? { ...cat, items: cat.items.map((item) => item.id === itemId ? { ...item, photoIds: (item.photoIds || []).filter((id) => id !== photoId) } : item) }
-        : cat
-    );
-    const updated = { ...currentChecklist, categories: newCategories };
-    commit(updated);
-    if (collaboration.isCollaborative(updated.id)) collaboration.syncChecklist(updated);
-  }, [currentChecklist, commit, storage, collaboration]);
-
-  const handleDeletePhoto = (photoId: string) => {
-    if (lightbox) {
-      if (editingMode) handleEditPhotoDelete(lightbox.categoryId, lightbox.itemId, photoId);
-      else deleteChecklistPhoto(currentChecklist, lightbox.categoryId, lightbox.itemId, photoId);
-      if (lightbox.photoIds.length <= 1) setLightbox(null);
+  const handleDeletePhoto = useCallback((photoId: string) => {
+    if (!lightbox) return;
+    const { categoryId, itemId, photoIds } = lightbox;
+    if (editingMode) {
+      editorState.handlers.deletePhoto(categoryId, itemId, photoId);
+    } else {
+      deleteChecklistPhoto(currentChecklist, categoryId, itemId, photoId);
     }
-  };
+    if (photoIds.length <= 1) setLightbox(null);
+  }, [lightbox, editingMode, editorState.handlers.deletePhoto, deleteChecklistPhoto, currentChecklist]);
 
   const enterEditMode = useCallback(() => {
-    const cats: Record<string, string> = {};
-    const items: Record<string, string> = {};
-    const descs: Record<string, string> = {};
-    for (const cat of currentChecklist.categories) {
-      cats[cat.id] = cat.name;
-      for (const item of cat.items) {
-        items[item.id] = item.text;
-        if (item.description !== undefined) descs[item.id] = item.description;
-      }
-    }
-    setCatValues(cats);
-    setItemValues(items);
-    setDescValues(descs);
+    editorState.initState(currentChecklist.categories);
     setEditingMode(true);
-    if (!isDraft) setLocalChecklist({ ...currentChecklist });
-  }, [currentChecklist, isDraft]);
+  }, [currentChecklist, editorState.initState]);
 
   const handleSave = useCallback(() => {
-    const newCategories = currentChecklist.categories.map(cat => ({
-      ...cat,
-      name: catValues[cat.id] ?? cat.name,
-      items: cat.items.map(item => ({
-        ...item,
-        text: itemValues[item.id] ?? item.text,
-        description: descValues[item.id] ?? item.description,
-      })),
-    }));
+    const merged = editorState.getMergedCategories();
+    const newCategories = merged as ChecklistCategory[];
 
-    const emptyTitle = !titleValue.trim();
-    const emptyCatNames = newCategories.some(c => !c.name.trim());
-    const emptyItemTexts = newCategories.some(c => c.items.some(i => !i.text.trim()));
-
-    if (emptyTitle || emptyCatNames || emptyItemTexts) { setShowValidation(true); return; }
+    if (editorState.emptyTitle(titleValue) || editorState.emptyCatNames() || editorState.emptyItemTexts()) {
+      setShowValidation(true);
+      return;
+    }
 
     const total = newCategories.reduce((acc, cat) => acc + cat.items.length, 0);
     const processed = newCategories.reduce((acc, cat) => acc + cat.items.filter(i => i.checked || i.skipped).length, 0);
@@ -188,58 +126,19 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
 
     if (isDraft && onSaveChecklist) {
       onSaveChecklist(updated);
-      closeChecklist();
+      onClose?.();
       return;
     }
     updateChecklist(updated);
     if (collaboration.isCollaborative(updated.id)) collaboration.syncChecklist(updated);
     setEditingMode(false);
-    setCatValues({});
-    setItemValues({});
-    setDescValues({});
-    setLocalChecklist(null);
-  }, [currentChecklist, catValues, itemValues, descValues, titleValue, updateChecklist, isDraft, onSaveChecklist, collaboration, closeChecklist, setShowValidation]);
+    editorState.resetState();
+  }, [currentChecklist, titleValue, updateChecklist, isDraft, onSaveChecklist, collaboration, onClose, setShowValidation, editorState]);
 
   const cancelEditMode = useCallback(() => {
-    setCatValues({});
-    setItemValues({});
-    setDescValues({});
+    editorState.resetState();
     setEditingMode(false);
-    setLocalChecklist(null);
-  }, []);
-
-  const addCategory = useCallback(() => {
-    const newCategory: ChecklistCategory = { id: generateUUID(), name: '', items: [] };
-    const updated = { ...currentChecklist, categories: [...currentChecklist.categories, newCategory] };
-    commit(updated);
-    setCatValues(prev => ({ ...prev, [newCategory.id]: '' }));
-  }, [currentChecklist, commit]);
-
-  const removeCategory = useCallback((categoryId: string) => {
-    if (collaboration.isCollaborative(currentChecklist.id)) {
-      collaboration.deleteCategory(currentChecklist, categoryId);
-      commit({ ...currentChecklist, categories: currentChecklist.categories.filter((c) => c.id !== categoryId) });
-      return;
-    }
-    const category = currentChecklist.categories.find(c => c.id === categoryId);
-    if (category) for (const item of category.items) for (const photoId of item.photoIds || []) storage.deletePhoto(photoId);
-    commit({ ...currentChecklist, categories: currentChecklist.categories.filter((c) => c.id !== categoryId) });
-  }, [currentChecklist, commit, storage, collaboration]);
-
-  const addItem = useCallback((categoryId: string) => {
-    if (collaboration.isCollaborative(currentChecklist.id)) {
-      const collabItem = collaboration.addItem(currentChecklist, categoryId);
-      if (!collabItem) return;
-      const localItem: ChecklistItem = { id: collabItem.id, text: collabItem.text, description: collabItem.description, checked: collabItem.checked };
-      const updated = { ...currentChecklist, categories: currentChecklist.categories.map((c) => c.id === categoryId ? { ...c, items: [...c.items, localItem] } : c) };
-      commit(updated);
-      setItemValues(prev => ({ ...prev, [localItem.id]: '' }));
-      return;
-    }
-    const newItem: ChecklistItem = { id: generateUUID(), text: '', description: '', checked: false };
-    commit({ ...currentChecklist, categories: currentChecklist.categories.map((c) => c.id === categoryId ? { ...c, items: [...c.items, newItem] } : c) });
-    setItemValues(prev => ({ ...prev, [newItem.id]: '' }));
-  }, [currentChecklist, commit, collaboration]);
+  }, [editorState.resetState]);
 
   const handleInlineAddItem = useCallback((categoryId: string) => {
     const text = newItemText.trim();
@@ -263,28 +162,17 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
     if (collaboration.isCollaborative(updated.id)) collaboration.syncChecklist(updated);
   }, [currentChecklist, newCategoryName, updateChecklist, collaboration]);
 
-  const removeItem = useCallback((categoryId: string, itemId: string) => {
-    if (collaboration.isCollaborative(currentChecklist.id)) {
-      collaboration.deleteItem(currentChecklist, categoryId, itemId);
-      commit({ ...currentChecklist, categories: currentChecklist.categories.map((c) => c.id === categoryId ? { ...c, items: c.items.filter((i) => i.id !== itemId) } : c) });
-      return;
-    }
-    const item = currentChecklist.categories.find(c => c.id === categoryId)?.items.find(i => i.id === itemId);
-    if (item) for (const photoId of item.photoIds || []) storage.deletePhoto(photoId);
-    commit({ ...currentChecklist, categories: currentChecklist.categories.map((c) => c.id === categoryId ? { ...c, items: c.items.filter((i) => i.id !== itemId) } : c) });
-  }, [currentChecklist, commit, storage, collaboration]);
-
   const handleSaveAsTemplateConfirm = useCallback(() => {
     if (onSaveAsTemplate) onSaveAsTemplate(currentChecklist);
     setShowSaveAsTemplateConfirm(false);
   }, [onSaveAsTemplate, currentChecklist, setShowSaveAsTemplateConfirm]);
 
-  const handleCancelDraft = useCallback(() => closeChecklist(), [closeChecklist]);
+  const handleCancelDraft = useCallback(() => onClose?.(), [onClose]);
 
   return (
     <>
       {editingMode && (
-        <EditToolbar isDraft={isDraft} onBack={closeChecklist} onCancel={cancelEditMode} onSave={handleSave} />
+        <Toolbar isDraft={isDraft} onBack={onClose ?? (() => {})} onCancel={cancelEditMode} onSave={handleSave} />
       )}
       <div className="space-y-4" style={editingMode ? { paddingTop: '48px' } : undefined}>
         {!editingMode && (
@@ -294,7 +182,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
             shareEnabled={share.enabled}
             isCollaborative={isCollaborative}
             collaboratorAvatars={collaboratorAvatars}
-            onBack={closeChecklist}
+            onBack={onClose ?? (() => {})}
             onEdit={enterEditMode}
             onSaveDraft={handleSave}
             onCancelDraft={handleCancelDraft}
@@ -319,25 +207,13 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
         />
 
         {editingMode ? (
-          <EditContent
-            currentChecklist={currentChecklist}
+          <DndEditor
+            categories={editorState.categories}
             showValidation={showValidation}
-            catValues={catValues}
-            itemValues={itemValues}
-            descValues={descValues}
-            handlers={{
-              commit,
-              addCategory,
-              removeCategory,
-              addItem,
-              updateCategoryName: (id, name) => setCatValues(prev => ({ ...prev, [id]: name })),
-              updateItemText: (itemId, text) => setItemValues(prev => ({ ...prev, [itemId]: text })),
-              updateItemDesc: (itemId, desc) => setDescValues(prev => ({ ...prev, [itemId]: desc })),
-              removeItem,
-              addPhoto: handleEditPhotoAdd,
-              deletePhoto: handleEditPhotoDelete,
-              viewPhotos: handleViewPhotos,
-            }}
+            catValues={editorState.catValues}
+            itemValues={editorState.itemValues}
+            descValues={editorState.descValues}
+            handlers={editorState.handlers}
           />
         ) : (
           <ReadContent
@@ -364,6 +240,14 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
                 if (isCollaborative) collaboration.syncChecklist(updated);
               },
               viewPhotos: handleViewPhotos,
+              addComment: async (categoryId, itemId, text) => {
+                const updated = await addComment(currentChecklist, categoryId, itemId, text);
+                if (isCollaborative) collaboration.syncChecklist(updated);
+              },
+              deleteComment: async (categoryId, itemId, commentId) => {
+                const updated = await deleteComment(currentChecklist, categoryId, itemId, commentId);
+                if (isCollaborative) collaboration.syncChecklist(updated);
+              },
               startAddItem: (categoryId) => { setAddingItemCategoryId(categoryId); setNewItemText(''); },
               newItemTextChange: setNewItemText,
               confirmAddItem: handleInlineAddItem,
@@ -376,7 +260,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
           />
         )}
 
-        {isCompleted && <CompletedBanner onBack={closeChecklist} />}
+        {isCompleted && <CompletedBanner onBack={onClose ?? (() => {})} />}
 
         <AnimatePresence>
           {lightbox && (
@@ -393,14 +277,25 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
           <ConfirmDialog
             title={t.validation.requiredTitle}
             message={[
-              !titleValue.trim() && t.validation.titleRequired,
-              currentChecklist.categories.some(c => !(catValues[c.id] ?? c.name).trim()) && t.validation.categoryNameRequired,
-              currentChecklist.categories.some(c => c.items.some(i => !(itemValues[i.id] ?? i.text).trim())) && t.validation.itemNameRequired,
+              editorState.emptyTitle(titleValue) && t.validation.titleRequired,
+              editorState.emptyCatNames() && t.validation.categoryNameRequired,
+              editorState.emptyItemTexts() && t.validation.itemNameRequired,
             ].filter(Boolean).join('\n')}
             confirmLabel={t.common.ok}
             variant="warning"
             onConfirm={() => setShowValidation(false)}
             onCancel={() => setShowValidation(false)}
+          />
+        )}
+
+        {editorState.showUnwrapConfirm && (
+          <ConfirmDialog
+            title={t.common.delete.confirmTitle}
+            message={t.checklist.unwrappedConfirm}
+            confirmLabel={t.common.ok}
+            variant="warning"
+            onConfirm={editorState.confirmUnwrap}
+            onCancel={editorState.cancelUnwrap}
           />
         )}
 

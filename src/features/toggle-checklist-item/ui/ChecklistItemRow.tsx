@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
-import { Check, Circle, CircleSlash, Camera, Image } from 'lucide-react';
+import { Check, Circle, CircleSlash, Camera, Image, MessageSquarePlus, Trash2, X } from 'lucide-react';
 import type { ChecklistItem } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
@@ -15,6 +15,8 @@ interface ChecklistItemRowProps {
   onAddPhoto: (file: File) => void;
   onDeletePhoto: (photoId: string) => void;
   onViewPhotos: (photoIds: string[], startIndex: number) => void;
+  onAddComment?: (text: string) => void;
+  onDeleteComment?: (commentId: string) => void;
 }
 
 const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
@@ -24,15 +26,20 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   onAddPhoto,
   onDeletePhoto,
   onViewPhotos,
+  onAddComment,
+  onDeleteComment,
 }) => {
   const { t } = useTranslation();
   const storage = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
   const [guideThumbs, setGuideThumbs] = useState<Record<string, string>>({});
   const [loadingGuides, setLoadingGuides] = useState(false);
   const [captureThumbs, setCaptureThumbs] = useState<Record<string, string>>({});
   const [descExpanded, setDescExpanded] = useState(false);
   const [descClamped, setDescClamped] = useState(false);
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const [commentText, setCommentText] = useState('');
   const descRef = useRef<HTMLParagraphElement>(null);
   const hasDescription = !!item.description && item.description.length > 0;
   const guideIds = item.guidePhotoIds || [];
@@ -44,6 +51,8 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   const hasImageLinks = imageLinks.length > 0;
   const effectiveGuideThumbs = guideIds.length === 0 ? {} : guideThumbs;
   const effectiveCaptureThumbs = captureIds.length === 0 ? {} : captureThumbs;
+  const comments = item.comments || [];
+  const hasComments = comments.length > 0;
 
   const guideIdsKey = guideIds.join(',');
   useEffect(() => {
@@ -104,6 +113,25 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
     }
   };
 
+  const handleAddComment = () => {
+    const text = commentText.trim();
+    if (!text || !onAddComment) return;
+    onAddComment(text);
+    setCommentText('');
+    setShowCommentInput(false);
+  };
+
+  const handleCommentKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddComment();
+    }
+    if (e.key === 'Escape') {
+      setShowCommentInput(false);
+      setCommentText('');
+    }
+  };
+
   const allPhotoIds = [...guideIds, ...imageLinks, ...captureIds];
 
   return (
@@ -153,12 +181,26 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
         </div>
 
         <div className="flex items-start gap-1.5 shrink-0">
+          {onAddComment && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCommentInput(v => !v);
+                setTimeout(() => commentInputRef.current?.focus(), 50);
+              }}
+              className={`${itemStyles['action-btn']} text-2xs px-2 bg-surface-1 text-tertiary border-subtle border rounded-sm`}
+              title={t.item.addComment}
+            >
+              <MessageSquarePlus size={12} />
+            </button>
+          )}
+
           <button
             onClick={(e) => {
               e.stopPropagation();
               fileInputRef.current?.click();
             }}
-            className={photoStyles['photo-add-btn-sm']}
+            className={`${photoStyles['photo-add-btn-sm']} ${itemStyles['action-btn']}`}
             title={t.item.addPhoto}
           >
             <Camera size={14} />
@@ -166,7 +208,7 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
 
           <button
             onClick={(e) => { e.stopPropagation(); onToggleSkipped(); }}
-            className={`px-2 py-1 text-2xs ${item.skipped ? 'bg-warning-subtle text-warning border-warning-subtle' : 'bg-surface-1 text-tertiary border-subtle'} border rounded-sm flex items-center gap-1`}
+            className={`${itemStyles['action-btn']} text-2xs px-2 ${item.skipped ? 'bg-warning-subtle text-warning border-warning-subtle' : 'bg-surface-1 text-tertiary border-subtle'} border rounded-sm`}
             title={t.checklist.skip}
           >
             <CircleSlash size={10} />
@@ -191,6 +233,57 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               {descExpanded ? t.common.seeLess : t.common.seeMore}
             </button>
           )}
+        </div>
+      )}
+
+      {showCommentInput && onAddComment && (
+        <div style={{ paddingLeft: '28px' }} className="mt-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5">
+            <input
+              ref={commentInputRef}
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={handleCommentKeyDown}
+              className="input text-xs flex-1"
+              placeholder={t.item.commentPlaceholder}
+            />
+            <button
+              onClick={handleAddComment}
+              className="btn-icon text-accent"
+              disabled={!commentText.trim()}
+            >
+              <Check size={14} />
+            </button>
+            <button
+              onClick={() => { setShowCommentInput(false); setCommentText(''); }}
+              className="btn-icon text-tertiary"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {hasComments && (
+        <div style={{ paddingLeft: '28px' }} className="mt-2 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+          <span className="text-2xs text-tertiary font-medium tracking-wide">{t.item.comments}</span>
+          {comments.map((c) => (
+            <div key={c.id} className="flex items-start gap-1.5 group">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-secondary leading-relaxed whitespace-pre-wrap">{c.text}</p>
+                <span className="text-2xs text-muted">{new Date(c.createdAt).toLocaleString()}</span>
+              </div>
+              {onDeleteComment && (
+                <button
+                  onClick={() => onDeleteComment(c.id)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 text-tertiary hover:text-danger"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

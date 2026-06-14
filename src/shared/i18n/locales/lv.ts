@@ -55,6 +55,7 @@ const lv: Translations = {
     saveAsTemplate: 'Pārvērst par Veidni',
     editMode: 'Rediģēt',
     saveMode: 'Saglabāt',
+    unwrappedConfirm: 'Kategorijas nosaukums un galvene tiks paslēpti. Vienumi tiks parādīti bez iesaiņojuma.',
   },
   common: {
     save: 'Saglabāt',
@@ -98,6 +99,10 @@ const lv: Translations = {
     yourPhoto: 'Jūsu Foto',
     photos: 'Fotogrāfijas',
     noPhotos: 'Vēl nav foto',
+    comments: 'Piezīmes',
+    addComment: 'Pievienot piezīmi',
+    commentPlaceholder: 'Rakstīt piezīmi...',
+    deleteComment: 'Dzēst piezīmi',
   },
   validation: {
     requiredTitle: 'Trūkst obligāto lauku',

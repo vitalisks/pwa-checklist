@@ -2,11 +2,13 @@ import React from 'react';
 import { TemplateList } from '@/widgets/template-list';
 import { ChecklistList } from '@/widgets/checklist-list';
 import { useTranslation } from '@/shared/i18n';
-import { useNavigation } from '@/app/model/navigation-context';
 
-const HomeView: React.FC = () => {
+interface HomeViewProps {
+  searchQuery?: string;
+}
+
+const HomeView: React.FC<HomeViewProps> = ({ searchQuery = '' }) => {
 const { t } = useTranslation();
-const { searchQuery } = useNavigation();
 
   return (
     <div className="space-y-6">

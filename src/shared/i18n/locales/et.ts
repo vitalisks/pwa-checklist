@@ -55,6 +55,7 @@ const et: Translations = {
     saveAsTemplate: 'Teisenda Malliks',
     editMode: 'Muuda',
     saveMode: 'Salvesta',
+    unwrappedConfirm: 'Kategooria nimi ja päis peidetakse. Üksused kuvatakse ilma ümbriseta.',
   },
   common: {
     save: 'Salvesta',
@@ -98,6 +99,10 @@ const et: Translations = {
     yourPhoto: 'Sinu Foto',
     photos: 'Fotod',
     noPhotos: 'Fotosid pole veel',
+    comments: 'Märkmed',
+    addComment: 'Lisa märkus',
+    commentPlaceholder: 'Kirjuta märkus...',
+    deleteComment: 'Kustuta märkus',
   },
   validation: {
     requiredTitle: 'Kohustuslikud Väljad Puuduvad',

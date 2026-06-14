@@ -28,7 +28,7 @@ const ItemEditRow: React.FC<ItemEditRowProps> = ({
   extras,
 }) => {
   return (
-    <div className="bg-surface-1 border border-subtle rounded px-1.5 py-1">
+    <div className="bg-surface-1 border border-subtle rounded px-3 py-1.5">
       <div className="flex items-center gap-1.5">
         {dragHandle}
         <input
