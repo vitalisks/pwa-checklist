@@ -4,231 +4,37 @@
 **Moirai** is a modern, responsive Progressive Web Application for managing checklists and templates. It is designed to be fast, offline-capable, and visually appealing with a glassmorphism aesthetic. The codebase follows **Feature-Sliced Design (FSD)** architecture.
 
 ## 2. Technology Stack
-* **Framework**: React 19 + TypeScript (no `tsconfig.json` — Vite handles TS internally)
+* **Framework**: React 19 + TypeScript 6 (`tsconfig.json` at root)
 * **Build Tool**: Vite 7
 * **Architecture**: Feature-Sliced Design (FSD) — `app` → `widgets` → `features` → `entities` → `shared`
+* **Routing**: React Router v7 (`react-router-dom`)
 * **Styling**: CSS Modules (`*.module.css`) + design tokens (`tokens.css`) + global utility classes (`global.css`) — **Tailwind is NOT used**
 * **Sharing**: Firebase (Firestore) — **conditional**, build-time flag via `VITE_FIREBASE_ENABLED`
 * **Storage**: IndexedDB via `StoragePort` interface + `IndexedDBAdapter` (dependency-injected through React Context)
 * **Icons**: Lucide React
 * **Animation**: Framer Motion
 * **Drag & Drop**: `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
+* **Image export**: `html2canvas`
 * **PWA/Offline**: `vite-plugin-pwa`
 * **Path Alias**: `@/` maps to `src/` (configured in `vite.config.ts`)
+* **Code Analysis**: `rollup-plugin-visualizer` (via `npm run analyze`)
 
-## 3. Project Structure
+## 3. Directory Structure
 
 ```
 src/
-├── index.css                     # Entry point — imports shared/styles/tokens.css + global.css
-├── main.tsx                      # Entry point — renders <App /> from ./app
-├── assets/
-│   └── react.svg
-│
-├── app/                          # Application layer — initialization, providers, routing
-│   ├── index.tsx                 # Composes StorageProvider + I18nProvider + AppRoutes
-│   ├── model/
-│   │   ├── navigation-context.tsx # Tab state, search, checklist viewing, draft management
-│   │   ├── template-context.tsx   # Template CRUD via TemplateRepository
-│   │   ├── checklist-context.tsx  # Checklist CRUD, blank creation, convert to template
-│   │   └── use-app-data.ts       # Central data orchestration hook (legacy — prefer per-context hooks)
-│   └── ui/
-│       └── routes.tsx            # View routing + tab state + overlay management
-│
-├── entities/                     # Business entities — domain types + repository classes
-│   ├── template/
-│   │   ├── index.ts
-│   │   ├── api/
-│   │   │   ├── index.ts
-│   │   │   ├── template-repository.ts   # TemplateRepository(storage: StoragePort)
-│   │   │   └── migrate.ts              # migrateTemplatesFromLocalStorage(storage)
-│   │   └── model/
-│   │       └── index.ts                 # Re-exports Template, Category, TemplateItem, GeneratedFrom + validateTemplate
-│   ├── checklist/
-│   │   ├── index.ts
-│   │   ├── api/
-│   │   │   ├── index.ts
-│   │   │   ├── checklist-repository.ts  # ChecklistRepository(storage: StoragePort)
-│   │   │   └── migrate.ts              # migrateChecklistsFromLocalStorage(storage)
-│   │   └── model/
-│   │       └── index.ts                 # Re-exports Checklist, ChecklistItem, ChecklistCategory, ChecklistStatus
-│   └── photo/
-│       ├── index.ts
-│       ├── api/
-│       │   ├── index.ts
-│       │   └── photo-repository.ts      # PhotoRepository(storage: StoragePort)
-│       └── model/
-│           └── index.ts                 # Re-exports ChecklistPhoto, PHOTO_ID_PREFIXES, buildTemplatePhotoId, buildChecklistPhotoId
-│
-├── features/                    # User-facing features — slices with model/api/ui segments
-│   ├── toggle-checklist-item/
-│   │   ├── index.ts             # Exports toggleChecklistItem (pure) + ChecklistItemRow (UI)
-│   │   ├── model/
-│   │   │   ├── index.ts
-│   │   │   └── toggle-item.ts  # Pure function: toggles checked/skipped + auto-completes
-│   │   └── ui/
-│   │       ├── ChecklistItemRow.tsx
-│   │       └── ChecklistItemRow.module.css
-│   ├── category-editor/
-│   │   ├── index.ts             # Exports CategoryEditCard, ItemEditRow + types
-│   │   └── ui/
-│   │       ├── CategoryEditCard.tsx  # Generic category card with render-prop items
-│   │       └── ItemEditRow.tsx       # Generic item row with drag handle + extras slot
-│   ├── edit-template/
-│   │   ├── index.ts             # Exports useEditingState, EditingStateProvider, EditingState type
-│   │   └── model/
-│   │       ├── index.ts
-│   │       └── editing-context.tsx # EditingStateProvider + useEditingState() — idle/creating/editing
-│   ├── create-checklist/
-│   │   ├── index.ts             # Exports createChecklistFromTemplate, createBlankChecklist, checklistToTemplate
-│   │   └── model/
-│   │       ├── index.ts
-│   │       ├── create-from-template.ts  # Maps Template → Checklist
-│   │       ├── create-blank-checklist.ts # Pure: creates Checklist with empty default category
-│   │       └── convert-checklist-to-template.ts  # Pure: Checklist → Template (reverse)
-│   ├── manage-photos/
-│   │   ├── index.ts             # Exports PhotoLightbox
-│   │   └── ui/
-│   │       ├── PhotoLightbox.tsx
-│   │       └── PhotoLightbox.module.css
-│   ├── import-export/
-│   │   ├── index.ts             # Exports exportData, importData, clearAllData
-│   │   └── model/
-│   │       ├── index.ts
-│   │       └── import-export.ts # Delegates to StoragePort methods
-│   ├── idea-flow/
-│   │   ├── index.ts             # Exports useIdeaFlow, IdeaFlowView, generatePrompt, parseResponse
-│   │   ├── api/
-│   │   │   ├── index.ts
-│   │   │   └── idea-service.ts  # LLM prompt generation + JSON response parser
-│   │   ├── config/
-│   │   │   └── index.ts         # PROMPT_VERSION constant
-│   │   ├── model/
-│   │   │   ├── index.ts
-│   │   │   └── use-idea-flow.ts # Voice input + clipboard paste + parse state machine
-│   │   └── ui/
-│   │       └── IdeaFlowView.tsx
-│   ├── share/
-│   │   ├── index.ts             # Exports ShareProvider, useShare, UI components
-│   │   ├── config/
-│   │   │   └── index.ts         # isFirebaseEnabled() — guarded by VITE_FIREBASE_ENABLED
-│   │   ├── api/
-│   │   │   ├── index.ts
-│   │   │   ├── firebase-init.ts # Conditional Firebase app init (dynamic import)
-│   │   │   ├── fcm-service.ts   # FCM token mgmt + send via callable function
-│   │   │   └── firestore-service.ts # Payload CRUD + inbox listener
-│   │   ├── model/
-│   │   │   ├── index.ts
-│   │   │   ├── share-types.ts   # SharePayload, IncomingShare, ContactCode
-│   │   │   └── sharing-context.tsx # React context: contacts, send, accept, incoming
-│   │   └── ui/
-│   │       ├── index.ts
-│   │       ├── MyCodeCard.tsx       # Device code display + Web Share export
-│   │       ├── AddContactDialog.tsx # Paste contact code
-│   │       ├── ContactsList.tsx     # Manage contacts
-│   │       ├── SendShareDialog.tsx  # Pick contact, send item
-│   │       └── IncomingSharesList.tsx # Accept/dismiss received shares
-│   ├── entities/contact/        # Contact entity for sharing
-│   │   ├── index.ts
-│   │   ├── api/
-│   │   │   └── contact-repository.ts
-│   │   └── model/
-│   │       └── index.ts
-│   └── inline-title-edit/
-│       ├── index.ts             # Exports InlineTitleEdit component
-│       └── ui/
-│           └── InlineTitleEdit.tsx  # Inline editable title with pencil/save/cancel
-│
-├── functions/                   # Firebase Cloud Function for FCM v1
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── src/
-│       └── index.ts             # sendFcmMessage callable function
-│
-├── firebase.json                # Firebase project config
-├── firestore.rules              # Firestore security rules
-├── firestore.indexes.json
-│
-├── shared/                      # Shared infrastructure — no business logic
-│   ├── index.ts                 # Barrel: re-exports all shared segments
-│   ├── speech.d.ts              # Ambient declarations for Web Speech API
-│   ├── api/
-│   │   ├── index.ts
-│   │   ├── storage-port.ts      # StoragePort interface (all CRUD + export/import methods)
-│   │   ├── indexeddb-adapter.ts # Full IndexedDB implementation of StoragePort
-│   │   └── storage-context.tsx  # StorageProvider + useStorage() hook
-│   ├── config/
-│   │   ├── index.ts
-│   │   ├── db.ts                # DB_NAME, DB_VERSION, STORES constants
-│   │   └── schemas.ts           # All domain types (Template, Checklist, ChecklistPhoto, etc.)
-│ ├── i18n/
-│ │ ├── index.ts
-│ │ ├── translations.ts # Translations interface + languageLoaders (import.meta.glob)
-│ │ ├── tr.ts # TrAccessor<T> recursive type + Tr alias
-│ │ ├── buildTr.ts # Proxy factory — buildTr(translations): Tr
-│ │ ├── I18nProvider.tsx # React Context provider + useI18nContext()
-│ │ ├── useTranslation.ts # Consumer hook — { t, language, changeLanguage }
-│ │ └── locales/ # One file per supported language, typed as Translations
-│ │     ├── en.ts
-│ │     ├── et.ts
-│ │     ├── lt.ts
-│ │     ├── lv.ts
-│ │     └── ru.ts
-│   ├── lib/
-│   │   ├── index.ts
-│   │   ├── image/
-│   │   │   ├── index.ts
-│   │   │   └── compressImage.ts # Image resize/optimization
-│   │   └── uuid/
-│   │       ├── index.ts
-│   │       └── generateUUID.ts  # UUID v4 with Safari polyfill
-│   ├── styles/
-│   │   ├── index.ts
-│   │   ├── tokens.css           # Design tokens — CSS custom properties (:root)
-│   │   ├── global.css           # Reset + global utility classes
-│   │   └── photo-zone.module.css # Shared photo gallery styles
-│   └── ui/
-│       ├── index.ts
-│       └── confirm-dialog/
-│           ├── index.ts
-│           ├── ConfirmDialog.tsx
-│           └── ConfirmDialog.module.css
-│
-└── widgets/                     # Compositional widgets — combine features + entities for UI blocks
-    ├── layout/
-    │   ├── index.ts
-    │   └── ui/
-    │       ├── Layout.tsx       # App shell — header with search + bottom nav
-    │       └── Layout.module.css
-    ├── checklist-view/
-    │   ├── index.ts
-    │   └── ui/
-    │       └── ChecklistView.tsx # Full checklist view (groups items, progress, lightbox, delete)
-    ├── checklist-list/
-    │   ├── index.ts
-    │   └── ui/
-    │       └── ChecklistList.tsx # Filtered checklist cards list
-    ├── home-view/
-    │   ├── index.ts
-    │   └── ui/
-    │       └── HomeView.tsx     # Home tab — templates + checklists composition
-    ├── progress-bar/
-    │   ├── index.ts
-    │   └── ui/
-    │       └── ChecklistProgressBar.tsx
-    ├── settings-view/
-    │   ├── index.ts
-    │   └── ui/
-    │       └── SettingsView.tsx # Language picker + import/export + clear data
-    ├── template-editor/
-    │   ├── index.ts
-    │   └── ui/
-    │       └── TemplateEditor.tsx # Create/edit template with DnD + photo management
-    └── template-list/
-        ├── index.ts
-        └── ui/
-            └── TemplateList.tsx  # Template grid with cards
+├── app/           # Providers, routing, data contexts
+├── entities/      # template/, checklist/, photo/ — domain types + repos
+├── features/      # ~15 feature slices — toggle-checklist-item, share, collaboration, export-checklist, item-editor, etc.
+├── shared/        # api/ (StoragePort), config/ (schemas), i18n/ (5 locales), lib/, styles/, theme/, ui/
+├── widgets/       # layout/, checklist-view/, template-editor/, settings-view/, inbox-view/, etc.
+├── functions/     # Firebase Cloud Function (FCM v1)
+├── firebase.json, firestore.rules, firestore.indexes.json
+├── sw.js          # Service worker (injectManifest)
+└── index.css, main.tsx
 ```
+
+Each FSD layer (`features/*`, `entities/*`, `widgets/*`) exposes a public API via `index.ts`. Internal files are never imported directly. Agents: use `glob`/`grep` to discover specific files — the tree above is intentionally sparse.
 
 ## 4. Key Systems & Implementation Details
 
@@ -242,34 +48,18 @@ src/
 * **`StoragePort`** (`shared/api/storage-port.ts`): Abstract interface defining all CRUD + export/import methods.
 * **`IndexedDBAdapter`** (`shared/api/indexeddb-adapter.ts`): Full IndexedDB implementation of StoragePort.
 * **Dependency injection**: `StorageProvider` wraps the app with a React Context. Components and hooks access storage via `useStorage()` hook — never by importing a singleton.
-* **Entity repositories** (`entities/*/api/`): Each entity has a repository class that accepts `StoragePort` via constructor injection. Instantiated in `useAppData` using the storage from context.
-* **Migration**: `migrateTemplatesFromLocalStorage(storage)` and `migrateChecklistsFromLocalStorage(storage)` accept `StoragePort` as a parameter. Called in `useAppData` on startup.
+* **Entity repositories** (`entities/*/api/`): Each entity has a repository class that accepts `StoragePort` via constructor injection. Instantiated in contexts using the storage from context.
+* **Migration**: `migrateTemplatesFromLocalStorage(storage)` and `migrateChecklistsFromLocalStorage(storage)` accept `StoragePort` as a parameter. Called in contexts on startup.
 
-### 4.3. Data Contexts (`TemplateContext` / `ChecklistContext`)
-* **TemplateContext** (`app/model/template-context.tsx`): Manages `templates[]` state via `TemplateRepository`. Exposes `saveTemplate`, `updateTemplate`, `deleteTemplate`.
-* **ChecklistContext** (`app/model/checklist-context.tsx`): Manages `checklists[]` state via `ChecklistRepository`. Exposes `createChecklist`, `createBlankChecklist`, `persistChecklist`, `updateChecklist`, `updateChecklistTitle`, `deleteChecklist`, `toggleItem`, `addChecklistPhoto`, `deleteChecklistPhoto`, `convertChecklistToTemplate`.
-* Both instantiates repositories using `useStorage()`.
-* `use-app-data.ts` is legacy — prefer consuming the per-context hooks via `useTemplate()` and `useChecklist()`.
-
-### 4.4. Internationalization (I18n)
+### 4.3. Internationalization (I18n)
 * Custom lightweight system in `shared/i18n/`.
-* **Provider**: `<LanguageProvider>` wraps the app (composed in `app/index.tsx`).
+* **Provider**: `<I18nProvider>` wraps the app (composed in `app/index.tsx`).
 * **Hook**: `const { t, language, changeLanguage } = useTranslation();`
 * **Supported Languages**: English (`en`), Estonian (`et`), Lithuanian (`lt`), Latvian (`lv`), Russian (`ru`).
-* **Date Formatting**: Automatically adjusts `toLocaleDateString` based on selected language.
 * When adding a new string, update **ALL** language files (`en.ts`, `et.ts`, `lt.ts`, `lv.ts`, `ru.ts`).
-* Current key count: ~80 keys per language file.
+* Current key count: ~160 leaf keys per language file.
 
-### 4.5. Navigation & Routing
-* Navigation state lives in `NavigationContext` (`app/model/navigation-context.tsx`): `activeTab`, `searchQuery`, `viewingChecklistId`, `draftChecklist`, `isIdeaFlowOpen` + actions (`switchTab`, `openChecklist`, `closeChecklist`, `createAndOpenChecklist`, `createAndOpenBlankChecklist`, `saveDraftChecklist`, `openIdeaFlow`, `closeIdeaFlow`).
-* **Draft flow**: `createAndOpenChecklist` and `createAndOpenBlankChecklist` create in-memory drafts (no persistence). The draft is stored in `draftChecklist` state. Explicit save calls `saveDraftChecklist` to persist. Cancel/close discards without saving.
-* Editing state lives in `EditingStateContext` (`features/edit-template/model/editing-context.tsx`): `idle`/`creating`/`editing` modes + `startEditing`, `cancelEditing`, `finishEditing`.
-* Data contexts: `TemplateContext` (`app/model/template-context.tsx`) and `ChecklistContext` (`app/model/checklist-context.tsx`) split the old `useAppData` responsibilities.
-* `app/ui/routes.tsx` consumes `useNavigation()`, `useEditingState()`, `useTemplate()`, `useChecklist()` to compose views.
-* Overlay views: `editingTemplate` (→ `TemplateEditor`), `viewingChecklist` (→ `ChecklistView`), `isIdeaFlowOpen` (→ `IdeaFlowView`) replace tab content.
-* Transitions handled by `Framer Motion` `AnimatePresence` with `mode="popLayout"` for smooth switching.
-
-### 4.6. Styling (CSS Modules + Design Tokens — NOT Tailwind)
+### 4.4. Styling (CSS Modules + Design Tokens — NOT Tailwind)
 * **Architecture**: 3-layer system — tokens → global utilities → component modules. No Tailwind, PostCSS, or CSS-in-JS.
 * **Design tokens** live in `shared/styles/tokens.css` (`:root` CSS custom properties). Single source of truth for colors, radii, easings. Reference via `var(--token-name)` in any module or global file.
 * **Global utilities** live in `shared/styles/global.css`: reset, `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-danger`, `.btn-icon`, `.input`, `.card`, `.card-hover`, `.card-inset`, `.section-label`, `.badge`, `.badge-success`, `.badge-warning`, `.progress-track`, `.progress-fill`, `.progress-fill-active`, `.progress-fill-done`, layout (`.flex`, `.grid`, `.gap-*`, `.p-*`, `.m-*`, etc.), typography (`.text-*`, `.font-*`, `.tracking-*`), borders (`.border-*`, `.rounded-*`), backgrounds (`.bg-*`), and misc (`.sr-only`, `.truncate`, `.animate-spin`).
@@ -278,7 +68,7 @@ src/
 * **Container**: `.container` (max-width 720px) in global utilities.
 * **New component rules**: If a component has dedicated CSS (not just global utilities), create a co-located `*.module.css` file and import it. Never add component-specific styles to the global CSS files.
 
-### 4.7. Photo System
+### 4.5. Photo System
 
 Photos are stored in IndexedDB via `PhotoRepository.save` / `get` / `delete`. Images are compressed before storage using `compressImage()` from `shared/lib/image/`.
 
@@ -291,7 +81,7 @@ Photos are stored in IndexedDB via `PhotoRepository.save` / `get` / `delete`. Im
 * **Guide photos** (`ChecklistItem.guidePhotoIds`): copied from `TemplateItem.photoIds` at checklist creation time. Read-only in the checklist view — cannot be deleted by the user.
 * **User-captured photos** (`ChecklistItem.photoIds`): added by the user during checklist execution via the camera button on each item row. Can be deleted.
 
-**Template editing**: `TemplateEditor` receives `onAddPhoto(itemId, file)` and `onDeletePhoto(itemId, photoId)` props. The caller (`routes.tsx` via `useAppData`) handles persistence through `PhotoRepository`.
+**Template editing**: `TemplateEditor` receives `onAddPhoto(itemId, file)` and `onDeletePhoto(itemId, photoId)` props. The caller (`routes.tsx` via `useTemplate()`) handles persistence through `PhotoRepository`.
 
 **Checklist execution**: `ChecklistItemRow` shows a guide strip and a captures strip. `useChecklist()` provides `addChecklistPhoto(checklist, categoryId, itemId, file)` and `deleteChecklistPhoto(checklist, categoryId, itemId, photoId)`.
 
@@ -301,92 +91,35 @@ Photos are stored in IndexedDB via `PhotoRepository.save` / `get` / `delete`. Im
 
 **Cleanup**: Deleting a template or checklist cascades to delete all associated photos from IndexedDB (handled in `ChecklistContext` / `TemplateContext`).
 
-### 4.8. Drag & Drop (TemplateEditor / ChecklistView)
+### 4.6. Drag & Drop
 
 Both `TemplateEditor` (widget) and `ChecklistView` (in edit mode) use `@dnd-kit` with `MouseSensor` (5px activation distance), `TouchSensor` (200ms delay), and `KeyboardSensor`.
 
-* **Category reorder**: The outer `SortableContext` wraps category cards; dropping a category on another category reorders via `arrayMove`.
-* **Item reorder / cross-category move**: Each `SortableCategory` has its own inner `SortableContext` for items. When an item is dropped on another item, it moves to that position; when dropped on a category header, it appends to the end of that category.
-* `DragOverlay` renders a ghost element (category card or item row) during the drag.
-* SortableCategory and SortableItem are inline sub-components within TemplateEditor.tsx.
+The shared `DndEditor` component from `features/item-editor` encapsulates the DnD logic and is used by both `TemplateEditor` and `ChecklistView` edit mode. It provides category reorder via outer `SortableContext`, item reorder/cross-category move via per-category inner `SortableContext`, a `DragOverlay` ghost element, and a toolbar for adding categories/items.
 
-### 4.9. Sharing (Conditional Firebase)
-* **Build-time flag**: The sharing feature is gated by `VITE_FIREBASE_ENABLED=true`. If not set, the entire feature is tree-shaken and hidden.
-* **User discovery**: Each device generates a persistent `deviceId` (UUID). The "My Code" section in Settings displays a contact code string. **Web Share API** (`navigator.share()`) shares the code via AirDrop, Messages, etc. Manual copy/paste is the fallback.
-* **Contacts**: Users add contacts by pasting a contact code. Contacts are stored in IndexedDB via the `ContactRepository` (`entities/contact/`) in the `CONTACTS` store.
-* **Send flow**: Store the checklist/template payload in Firestore (`shared_payloads` collection). Push is best-effort — the data is always stored in Firestore.
-* **Receive flow**: A Firestore `onSnapshot` listener on `shared_payloads where recipientDeviceId == myDeviceId` detects new shares in real-time. The `IncomingSharesList` component shows pending items. "Accept" fetches the payload from Firestore, saves it as a new template/checklist, and deletes the Firestore document.
-* **Payload expiry**: Shared payloads have a 24-hour TTL (set via `expiresAt` field).
-* **Data Security**: No auth/accounts. The system is trust-based — anyone with your device's FCM token can send you data. Firestore rules allow reads/creates/deletes on `shared_payloads`.
-* **Env vars required**: `VITE_FIREBASE_ENABLED=true`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`.
-* **Deployment**: Only needs `firebase deploy --only firestore` for the rules (already deployed). No Cloud Functions needed — works on the Spark (free) plan.
-
-### 4.10. Compatibility
-* **UUID Generation**: Always use `generateUUID()` from `@/shared/lib` instead of `crypto.randomUUID()` directly to support older browsers (Safari).
-* **Viewport**: Locked to `user-scalable=no` with `viewport-fit=cover` for safe-area on notch devices.
-* **Apple meta tags**: `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style: black-translucent`.
-* **Speech API**: Ambient types in `shared/speech.d.ts` cover `SpeechRecognition` + `webkitSpeechRecognition` constructors.
-
-## 5. Development Guidelines
-
-### 5.1. Adding a New Feature
-1. **Create a feature slice** in `src/features/{feature-name}/` with `model/`, `ui/`, and/or `api/` segments as needed.
-2. **Add a barrel `index.ts`** that re-exports the public API of the slice.
-3. **Storage**: If the feature needs persistence, use `useStorage()` to get the `StoragePort`, then use entity repositories. Never import storage adapters directly.
-4. **UI**: Import shared UI primitives from `@/shared/ui`, global CSS utilities from `@/shared/styles`, and other features/entities via `@/` path alias.
-5. **I18n**: Add all new text strings to **ALL** language files in `shared/i18n/` (`en.ts`, `es.ts`, `lv.ts`, `ru.ts`).
-6. **Wire into app**: If the feature needs app-level orchestration, add it to `useAppData` or `routes.tsx` in the `app/` layer.
-
-### 5.2. Adding a New Entity
-1. **Define types** in `shared/config/schemas.ts` (not in entities — to avoid shared→entities circular imports).
-2. **Re-export types** from `entities/{name}/model/index.ts` for convenient consumption by features/widgets.
-3. **Create repository** in `entities/{name}/api/` — accepts `StoragePort` via constructor.
-4. **Add barrel** `entities/{name}/index.ts` re-exporting types + repository.
-
-### 5.3. Adding a New Widget
-1. **Create** `src/widgets/{widget-name}/ui/WidgetName.tsx` + co-located `*.module.css` if needed.
-2. **Add barrel** `widgets/{widget-name}/index.ts` re-exporting the component.
-3. **Compose**: Widgets import from `features/`, `entities/`, and `shared/` only — never from `app/` or other widgets.
-4. **Wire**: Import the widget in `app/ui/routes.tsx` and connect it to data from `useAppData`.
-
-### 5.4. Styling
-* **Global utilities**: Add new utility classes to `shared/styles/global.css` (NOT Tailwind — all CSS is hand-written).
-* **Design tokens**: Add new design tokens to `shared/styles/tokens.css`.
-* **Component CSS**: Create a co-located `*.module.css` file for any component-specific styles. Import via `import styles from './Component.module.css'`.
-* **Shared CSS Modules**: Place in `shared/styles/` (e.g. `photo-zone.module.css`).
-* **Colors**: Always use CSS custom properties from `tokens.css` via `var(--token-name)`. Never hardcode color values.
-* **Global utility classes** (`.flex`, `.btn`, `.card`, `.input`, etc.) can be mixed with CSS Module classes freely: `` className={`${styles.wrapper} card`} ``.
-
-### 5.5. Key Component Behaviours
+### 4.7. Key Component Behaviours
 
 **TemplateEditor validation**: Clicking Save with an empty title, empty category name, or empty item text sets `showValidation = true` (highlights offending fields with the `input-invalid` CSS class) and opens a `ConfirmDialog` with `variant="warning"` listing the missing fields. The save is blocked until fields are filled.
 
-**ChecklistView inline title editing**: A pencil icon next to the checklist title opens an inline `<input>` with Save/Cancel buttons. `Enter` saves, `Escape` cancels. Calls `updateChecklistTitle(checklist, newTitle)` via `useAppData`.
+**ChecklistView inline title editing**: A pencil icon next to the checklist title opens an inline `<input>` with Save/Cancel buttons. `Enter` saves, `Escape` cancels. Calls `updateChecklistTitle(checklist, newTitle)` via `useChecklist()`.
 
-**ChecklistView editing mode**: An "Edit" button enters an in-place editing mode with drag-and-drop category/item reordering, inline category name and item text/description editing, and photo add/delete. Saving validates empty fields (shows `ConfirmDialog` warning). The "Save as Template" button converts the checklist to a template and opens the template editor for further editing.
+**ChecklistView editing mode**: An "Edit" button enters an in-place editing mode using `DndEditor` with drag-and-drop category/item reordering, inline category name and item text/description editing, and photo add/delete. Saving validates empty fields (shows `ConfirmDialog` warning). The "Save as Template" button converts the checklist to a template and opens the template editor for further editing.
 
-**ChecklistView draft mode**: When opening a blank checklist (or creating from template without persistence), the view opens in editing mode as a draft. Drafts are not persisted until the explicit "Save" button is clicked. Cancel/close discards the draft. Drafts use `onSaveChecklist` callback from `routes.tsx` which calls `saveDraftChecklist`.
+**ChecklistView draft mode**: When opening a new checklist via `/checklist/new` route, the view opens in editing mode as a draft (passed via `location.state.draft`). Drafts are not persisted until the explicit "Save" button is clicked. Cancel/close discards the draft. The save handler calls `persistChecklist` and navigates to `/checklist/:id`.
 
 **ChecklistList filter tabs**: Pill buttons above the list — "All", "Unfinished" (status !== `'completed'`), "Done" (status === `'completed'`). Search and filter are combined (both applied simultaneously).
 
 **ChecklistItemRow description clamping**: Descriptions longer than 3 lines are clamped with a "See more" toggle. Uses `useLayoutEffect` + `scrollHeight > clientHeight` to detect overflow.
 
-### 5.6. Known Issues (to fix)
-* `vite.config.ts` `includeAssets` references `favicon.ico`, `apple-touch-icon.png`, `mask-icon.svg` — none of these exist in `public/`. Only `icon.svg` is present.
-* Web app manifest has only an SVG icon — no PNG fallback icons.
-* Some empty directories exist from the migration: `entities/checklist/ui/`, `entities/template/ui/`, `features/inline-title-edit/model/`, `features/manage-photos/lib/`, `widgets/template-editor/lib/` — can be removed.
+### 4.8. Compatibility
+* **UUID Generation**: Always use `generateUUID()` from `@/shared/lib` instead of `crypto.randomUUID()` directly to support older browsers (Safari).
 
-### 5.7. Offline & Installability
-* The app is configured as an installable web app with `vite-plugin-pwa` using `injectManifest` strategy (`src/sw.js`). Service worker auto-updates (`registerType: 'autoUpdate'`).
-* The custom SW (`src/sw.js`) precaches assets via `precacheAndRoute(self.__WB_MANIFEST)` and handles `push` events for FCM background notifications + `notificationclick` for focusing the app.
-* The build output is served via `npx serve dist` (script: `npm run serve`).
-
-### 5.8. Verifying Changes (lint + typecheck)
-Always run both checks after making changes, before committing:
+## 5. Verifying Changes (lint + typecheck)
+Always run both checks after making changes:
 
 ```sh
 npm run lint       # ESLint — catches undeclared variables, unused vars, React hooks rules
 npm run typecheck  # tsc --noEmit — catches type mismatches, missing exports, dead code
 ```
 
-The lint config covers `.ts/.tsx/.js/.jsx` files via `typescript-eslint`. The `tsconfig.json` uses `strict: true` with `noUnusedLocals` and `noUnusedParameters`. Build (`vite build`) is not affected by either — both are purely for development-time validation. Explicitly run them to catch issues early.
+The `tsconfig.json` uses `strict: true` with `noUnusedLocals` and `noUnusedParameters`.
