@@ -3,6 +3,7 @@ import { Outlet, NavLink, useSearchParams } from "react-router-dom";
 import { Search, LayoutGrid, Settings, Home, Inbox } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
 import { useShare } from "@/features/share";
+import { useCollaboration } from "@/features/collaboration";
 import styles from "./Layout.module.css";
 
 const navItems = [
@@ -15,7 +16,8 @@ const navItems = [
 const Layout: React.FC = () => {
   const { t } = useTranslation();
   const { incomingShares } = useShare();
-  const pendingCount = incomingShares.filter((s) => s.status === 'pending').length;
+  const { incomingInvites } = useCollaboration();
+  const pendingCount = incomingShares.filter((s) => s.status === 'pending').length + incomingInvites.length;
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
 

@@ -91,7 +91,7 @@ export async function deleteCollaborativeChecklist(id: string): Promise<void> {
 
 export async function listenForCollaborativeChecklist(
   checklistId: string,
-  onChange: (checklist: CollaborativeChecklist) => void,
+  onChange: (checklist: CollaborativeChecklist | null, id: string) => void,
 ): Promise<() => void> {
   const start = performance.now();
   const db = await getFirestoreInstance();
@@ -112,10 +112,10 @@ export async function listenForCollaborativeChecklist(
         if (snap.exists()) {
           const data = snap.data() as CollaborativeChecklist;
           log('SNAPSHOT', path, { exists: true, title: data.title, updatedAt: data.updatedAt, data }, performance.now() - snapTime);
-          onChange(data);
+          onChange(data, checklistId);
         } else {
           log('SNAPSHOT', path, { exists: false, status: 'deleted', data: null }, performance.now() - snapTime);
-          onChange(null as unknown as CollaborativeChecklist);
+          onChange(null, checklistId);
         }
       },
       (error) => {

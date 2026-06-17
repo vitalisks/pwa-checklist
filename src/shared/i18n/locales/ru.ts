@@ -162,6 +162,9 @@ const ru: Translations = {
     notificationsOff: 'Нажмите, чтобы включить оповещения о входящих общих доступах',
     noIncoming: 'Входящих общих элементов пока нет.',
     setupFirebase: 'Настройте Firebase, чтобы включить обмен.',
+    photos: 'Photos',
+    loadingPhotos: 'Loading photos...',
+    photoTooLarge: 'Photo too large — remove it to share',
   },
   collaboration: {
     shared: 'Общий',

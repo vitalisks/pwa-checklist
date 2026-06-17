@@ -2,8 +2,10 @@
 
 import React, { createContext, useContext, useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import type { CollaborativeChecklist, CollaborativeItem, Checklist } from '@/shared/config';
+import { useStorage } from '@/shared/api';
 import { useShare } from '@/features/share';
 import { useChecklist } from '@/app/model/checklist-context';
+import { PhotoRepository } from '@/entities/photo';
 import { listenToInbox, removeCollaborationInvite } from '@/features/share/api/firestore-service';
 import { isFirebaseEnabled } from '@/features/share/config';
 import {
@@ -60,6 +62,8 @@ interface CollaborationContextType {
 const CollaborationContext = createContext<CollaborationContextType | undefined>(undefined);
 
 export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const storage = useStorage();
+  const photoRepo = useMemo(() => new PhotoRepository(storage), [storage]);
   const { deviceId, contacts } = useShare();
   const { checklists, updateChecklist, persistChecklist } = useChecklist();
   const enabled = isFirebaseEnabled();
@@ -69,8 +73,10 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
   const unsyncFunctions = useRef<Map<string, () => void>>(new Map());
   const lastWrittenAt = useRef<Map<string, number>>(new Map());
   const recentlyDeleted = useRef<Set<string>>(new Set());
+  const recentlyDeletedAt = useRef<Map<string, number>>(new Map());
   const knownInviteIdsRef = useRef<Set<string>>(new Set());
   const [incomingInvites, setIncomingInvites] = useState<IncomingInvite[]>([]);
+  const isLoaded = useRef(false);
   const localIds = useRef<Set<string>>(new Set(checklists.map(c => c.id)));
   useEffect(() => { localIds.current = new Set(checklists.map(c => c.id)); });
 
@@ -79,8 +85,19 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     updateCollaborativeChecklist(collab);
   }, []);
 
-  const handleRemoteChange = useCallback((collab: CollaborativeChecklist | null) => {
+  const handleRemoteChange = useCallback(async (collab: CollaborativeChecklist | null, checklistId: string) => {
     if (!collab) {
+      recentlyDeleted.current.add(checklistId);
+      recentlyDeletedAt.current.set(checklistId, Date.now());
+      unsyncFunctions.current.delete(checklistId);
+      collabCache.current.delete(checklistId);
+      lastWrittenAt.current.delete(checklistId);
+      recentlyDeleted.current.delete(checklistId);
+      setCollaborativeIds((prev) => {
+        const next = new Set(prev);
+        next.delete(checklistId);
+        return next;
+      });
       return;
     }
 
@@ -93,15 +110,26 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
+    // Save incoming photo data to IndexedDB
+    if (collab.photoDataUrls) {
+      for (const [photoId, dataUrl] of Object.entries(collab.photoDataUrls)) {
+        const existing = await photoRepo.get(photoId);
+        if (!existing) {
+          await photoRepo.save({ itemId: photoId, dataUrl, updatedAt: Date.now() });
+        }
+      }
+    }
+    const processed = collab.photoDataUrls ? { ...collab, photoDataUrls: undefined } : collab;
+
     const existing = collabCache.current.get(collab.id);
     if (existing) {
-      const merged = mergeChecklists(existing, collab);
+      const merged = mergeChecklists(existing, processed);
       if (merged.updatedAt !== existing.updatedAt) {
         collabCache.current.set(collab.id, merged);
         updateChecklist(toChecklist(merged));
       }
     } else {
-      collabCache.current.set(collab.id, collab);
+      collabCache.current.set(collab.id, processed);
       setCollaborativeIds((prev) => {
         const next = new Set(prev);
         next.add(collab.id);
@@ -113,12 +141,67 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
         persistChecklist(toChecklist(collab));
       }
     }
-  }, [updateChecklist, persistChecklist]);
+  }, [updateChecklist, persistChecklist, photoRepo]);
+
+  // Load collaborative IDs from IndexedDB on mount and restore listeners
+  useEffect(() => {
+    if (!enabled || !deviceId) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const saved = await storage.getMeta<string[]>('collaborativeIds');
+      if (cancelled) return;
+
+      isLoaded.current = true;
+
+      if (saved) {
+        setCollaborativeIds(new Set(saved));
+
+        for (const id of saved) {
+          if (cancelled) break;
+          if (collabCache.current.has(id)) continue;
+
+          const unsub = await listenForCollaborativeChecklist(id, handleRemoteChange);
+          unsyncFunctions.current.set(id, unsub);
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [enabled, deviceId, handleRemoteChange, storage]);
+
+  // Persist collaborative IDs to IndexedDB on every change
+  useEffect(() => {
+    if (!enabled || !isLoaded.current) return;
+
+    const arr = [...collaborativeIds];
+    if (arr.length > 0) {
+      storage.setMeta('collaborativeIds', arr);
+    } else {
+      storage.deleteMeta('collaborativeIds');
+    }
+  }, [collaborativeIds, storage, enabled]);
+
+  // Cleanup expired recentlyDeleted entries (60s TTL)
+  useEffect(() => {
+    if (!enabled) return;
+    const interval = setInterval(() => {
+      const cutoff = Date.now() - 60_000;
+      for (const [id, ts] of recentlyDeletedAt.current) {
+        if (ts < cutoff) {
+          recentlyDeleted.current.delete(id);
+          recentlyDeletedAt.current.delete(id);
+        }
+      }
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled) return;
 
-    let initialSnapshotProcessed = false;
+    let isFirstSnapshot = true;
 
     const unsubPromise = listenToInbox(deviceId, (data) => {
       if (!data) return;
@@ -139,8 +222,8 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
           receivedAt: Date.now(),
         }]);
 
-        // Individual notification for invites arriving after initial snapshot
-        if (initialSnapshotProcessed && Notification.permission === 'granted') {
+        // Individual notification for invites arriving after the initial snapshot
+        if (!isFirstSnapshot && Notification.permission === 'granted') {
           const sender = contacts.find(c => c.deviceId === (entry as Record<string, string>).ownerDeviceId);
           const senderName = sender?.name || 'Someone';
           navigator.serviceWorker.ready.then((registration) => {
@@ -155,9 +238,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
 
-      if (Object.keys(invites).length > 0) {
-        initialSnapshotProcessed = true;
-      }
+      isFirstSnapshot = false;
 
       // Cleanup when invite disappears from inbox (sender removed it)
       for (const checklistId of knownInviteIdsRef.current) {
@@ -192,6 +273,30 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     return collaborativeIds.has(id);
   }, [collaborativeIds]);
 
+  const collectPhotoIds = useCallback((cl: Checklist): Set<string> => {
+    const ids = new Set<string>();
+    for (const cat of cl.categories) {
+      for (const item of cat.items) {
+        for (const pid of item.photoIds ?? []) ids.add(pid);
+        for (const pid of item.guidePhotoIds ?? []) ids.add(pid);
+      }
+    }
+    return ids;
+  }, []);
+
+  const getMissingPhotoDataUrls = useCallback(async (checklist: Checklist, existing: CollaborativeChecklist): Promise<Record<string, string> | undefined> => {
+    const existingIds = collectPhotoIds(toChecklist(existing));
+    const newIds = new Set([...collectPhotoIds(checklist)].filter(id => !existingIds.has(id)));
+    if (newIds.size === 0) return undefined;
+
+    const result: Record<string, string> = {};
+    for (const photoId of newIds) {
+      const photo = await photoRepo.get(photoId);
+      if (photo) result[photoId] = photo.dataUrl;
+    }
+    return Object.keys(result).length > 0 ? result : undefined;
+  }, [collectPhotoIds, photoRepo]);
+
   const getCollaboratorIds = useCallback((id: string): string[] => {
     const existing = collabCache.current.get(id);
     return existing ? existing.collaborators : [];
@@ -201,7 +306,18 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     checklist: Checklist,
     collaboratorDeviceIds: string[],
   ): Promise<boolean> => {
-    const collab = toCollaborativeChecklist(checklist, deviceId, [deviceId, ...collaboratorDeviceIds]);
+    // Load all existing photo data URLs for the invitees
+    const allPhotoIds = collectPhotoIds(checklist);
+    const photoDataUrls: Record<string, string> = {};
+    for (const photoId of allPhotoIds) {
+      const photo = await photoRepo.get(photoId);
+      if (photo) photoDataUrls[photoId] = photo.dataUrl;
+    }
+
+    const collab = toCollaborativeChecklist(
+      checklist, deviceId, [deviceId, ...collaboratorDeviceIds],
+      Object.keys(photoDataUrls).length > 0 ? photoDataUrls : undefined,
+    );
     const ok = await createCollaborativeChecklist(collab);
     if (ok) {
       collabCache.current.set(collab.id, collab);
@@ -220,7 +336,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
     return ok;
-  }, [deviceId, handleRemoteChange]);
+  }, [deviceId, handleRemoteChange, collectPhotoIds, photoRepo]);
 
   const addCollaborator = useCallback(async (
     checklistId: string,
@@ -244,10 +360,17 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const acceptInvite = useCallback(async (checklistId: string) => {
     setIncomingInvites(prev => prev.filter(i => i.checklistId !== checklistId));
+    knownInviteIdsRef.current.delete(checklistId);
+    setCollaborativeIds((prev) => {
+      const next = new Set(prev);
+      next.add(checklistId);
+      return next;
+    });
+    await removeCollaborationInvite(deviceId, checklistId);
 
     const unsub = await listenForCollaborativeChecklist(checklistId, handleRemoteChange);
     unsyncFunctions.current.set(checklistId, unsub);
-  }, [handleRemoteChange]);
+  }, [deviceId, handleRemoteChange]);
 
   const declineInvite = useCallback(async (checklistId: string) => {
     setIncomingInvites(prev => prev.filter(i => i.checklistId !== checklistId));
@@ -320,16 +443,21 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     writeToFirestore(updated);
   }, [writeToFirestore]);
 
-  const addPhoto = useCallback((checklist: Checklist, categoryId: string, itemId: string, photoId: string) => {
+  const addPhoto = useCallback(async (checklist: Checklist, categoryId: string, itemId: string, photoId: string) => {
     const existing = collabCache.current.get(checklist.id);
     if (!existing) return;
     const item = existing.categories.find(c => c.id === categoryId)?.items.find(i => i.id === itemId);
     if (!item) return;
     const photoIds = [...(item.photoIds || []), photoId];
+
+    // Include photo data URL so collaborators can download it
+    const photo = await photoRepo.get(photoId);
+    const photoDataUrls = photo ? { [photoId]: photo.dataUrl } : undefined;
+
     const updated = applyLocalEdit(existing, categoryId, itemId, { photoIds }, deviceId);
     collabCache.current.set(checklist.id, updated);
-    writeToFirestore(updated);
-  }, [deviceId, writeToFirestore]);
+    writeToFirestore(photoDataUrls ? { ...updated, photoDataUrls } : updated);
+  }, [deviceId, writeToFirestore, photoRepo]);
 
   const deletePhoto = useCallback((checklist: Checklist, categoryId: string, itemId: string, photoId: string) => {
     const existing = collabCache.current.get(checklist.id);
@@ -372,16 +500,18 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     writeToFirestore(updated);
   }, [writeToFirestore]);
 
-  const syncChecklist = useCallback((checklist: Checklist) => {
+  const syncChecklist = useCallback(async (checklist: Checklist) => {
     const existing = collabCache.current.get(checklist.id);
     if (!existing) return;
-    const updated = toCollaborativeChecklist(checklist, deviceId, existing.collaborators);
+    const photoDataUrls = await getMissingPhotoDataUrls(checklist, existing);
+    const updated = toCollaborativeChecklist(checklist, deviceId, existing.collaborators, photoDataUrls);
     collabCache.current.set(checklist.id, updated);
     writeToFirestore(updated);
-  }, [deviceId, writeToFirestore]);
+  }, [deviceId, writeToFirestore, getMissingPhotoDataUrls]);
 
   const stopCollaboration = useCallback(async (checklistId: string) => {
     recentlyDeleted.current.add(checklistId);
+    recentlyDeletedAt.current.set(checklistId, Date.now());
     const unsub = unsyncFunctions.current.get(checklistId);
     if (unsub) {
       unsub();

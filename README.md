@@ -1,31 +1,38 @@
-# Moirai - Modern Checklist App
+# Moirai — Modern Checklist App
 
-Moirai is a beautifully designed, offline-capable Progressive Web Application for managing checklists and templates. Built with performance and user experience in mind, it features a sleek glassmorphism UI, robust state management, and multi-language support.
+Moirai is a beautifully designed, offline-capable Progressive Web Application for managing checklists and templates. Built with performance and user experience in mind, it features a sleek glassmorphism UI, robust state management, multi-language support, AI-powered template generation, and optional real-time collaboration.
 
-![Moirai Project](https://via.placeholder.com/800x400?text=Moirai+Preview)
+## Features
 
-## ✨ key Features
-
-*   **📱 Progressive Web App**: Installable on mobile and desktop, works fully offline.
-*   **🎨 Premium UI/UX**: Modern glassmorphism design with smooth animations and transitions.
-*   **⚡ Fast & Reliable**: Uses **IndexedDB** for virtually unlimited offline storage and instant loading.
-*   **🌍 Multi-language Support**: Fully localized in **English**, **Spanish**, **Latvian**, and **Russian** with auto-detection.
+*   **📱 Progressive Web App**: Installable on mobile and desktop, works fully offline with service worker caching.
+*   **🎨 Premium UI/UX**: Modern glassmorphism design with smooth animations, transitions, and dark/light theme support.
+*   **⚡ Fast & Reliable**: Uses **IndexedDB** for unlimited offline storage and instant loading.
+*   **🌍 Multi-language Support**: Fully localized in **English**, **Estonian**, **Lithuanian**, **Latvian**, and **Russian** with browser auto-detection.
 *   **📋 Template System**: Create reusable templates with categories and items to quickly spin up new checklists.
-*   **🔄 Smart State**: Checklists track progress automatically, supporting "Skip" logic for flexible workflows.
-*   **📸 Photo Support**: Attach guide photos to template items and capture your own photos per checklist item. Full-screen lightbox with swipe navigation.
-*   **✏️ Inline Editing**: Edit checklist titles in-place directly from the checklist view.
-*   **↕️ Drag & Drop**: Reorder categories and items in the template editor via drag and drop.
-*   **🔒 Privacy Focused**: All data stored locally on your device. Zero tracking.
+*   **✅ Checklist Execution**: Track progress per item, toggle checked/skipped, auto-completion logic.
+*   **🤖 AI-Powered Idea Flow**: Generate checklists from a voice or text prompt using an LLM — parse structured responses into ready-to-use templates.
+*   **📸 Photo Support**: Attach guide photos to template items, capture photos during checklist execution, and AI-generated image links. Full-screen lightbox.
+*   **💬 Item Comments**: Add comments to individual checklist items for notes or observations.
+*   **✏️ Inline Editing**: Edit checklist titles and items in-place directly from the checklist view.
+*   **↕️ Drag & Drop**: Reorder categories and items in the template editor and checklist view via drag and drop.
+*   **🔗 Sharing (Firebase)**: Send templates and checklists to other devices via Firestore (24h TTL, no accounts needed).
+*   **👥 Real-Time Collaboration (Firebase)**: Collaborative editing of checklists with real-time sync, invite system, and conflict resolution.
+*   **🖼️ Export as Image**: Export checklists as JPEG images with optional comment — download or share via the Web Share API.
+*   **📦 Data Import/Export**: Full JSON export and import of all data for backup or transfer.
+*   **📥 Inbox**: Centralized view for received shares and collaboration invites.
+*   **🔒 Privacy Focused**: All data stored locally on your device by default. Zero tracking. Sharing is opt-in.
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 *   **Core**: [React 19](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/)
 *   **Build**: [Vite](https://vitejs.dev/)
+*   **Routing**: [React Router](https://reactrouter.com/) v7
 *   **Styling**: CSS Modules + CSS custom properties (design tokens) — no Tailwind
-*   **State & Storage**: React Hooks + IndexedDB (Custom implementation)
+*   **State & Storage**: React Context + IndexedDB (Custom `StoragePort` interface)
 *   **Icons**: [Lucide React](https://lucide.dev/)
 *   **Animations**: [Framer Motion](https://www.framer.com/motion/)
 *   **Drag & Drop**: [@dnd-kit](https://dndkit.com/)
+*   **Backend (optional)**: [Firebase](https://firebase.google.com/) (Firestore) for sharing and collaboration
 
 ## 🚀 Getting Started
 
@@ -84,7 +91,8 @@ Once set, the app will show a "My Code" section in Settings and a share icon on 
 Moirai automatically detects your browser's language. You can also manually switch languages in the **Settings** tab.
 
 *   🇺🇸 English (Default)
-*   🇪🇸 Spanish
+*   🇪🇪 Estonian
+*   🇱🇹 Lithuanian
 *   🇱🇻 Latvian
 *   🇷🇺 Russian
 

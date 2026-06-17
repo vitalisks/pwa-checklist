@@ -174,6 +174,9 @@ export interface Translations {
     notificationsOff: string
     noIncoming: string
     setupFirebase: string
+    photos: string
+    loadingPhotos: string
+    photoTooLarge: string
   }
   collaboration: {
     shared: string

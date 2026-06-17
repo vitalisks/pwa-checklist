@@ -10,6 +10,11 @@ export interface ImportResult {
   skipped: number;
 }
 
+export interface MetaEntry {
+  id: string;
+  value: unknown;
+}
+
 export interface StoragePort {
   getTemplates(): Promise<Template[]>;
   addTemplate(template: Template): Promise<void>;
@@ -35,6 +40,10 @@ export interface StoragePort {
   updateContact(contact: Contact): Promise<void>;
   deleteContact(deviceId: string): Promise<void>;
   clearContacts(): Promise<void>;
+
+  getMeta<T>(key: string): Promise<T | undefined>;
+  setMeta(key: string, value: unknown): Promise<void>;
+  deleteMeta(key: string): Promise<void>;
 
   clearAll(): Promise<void>;
   exportAll(): Promise<void>;

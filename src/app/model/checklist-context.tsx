@@ -152,6 +152,9 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             for (const photoId of item.photoIds || []) {
               await photoRepo.delete(photoId);
             }
+            for (const photoId of item.guidePhotoIds || []) {
+              await photoRepo.delete(photoId);
+            }
           }
         }
       }

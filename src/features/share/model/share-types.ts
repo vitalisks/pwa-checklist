@@ -5,6 +5,7 @@ export interface IncomingShare {
   senderName?: string;
   title: string;
   data: string;
+  photos?: Record<string, string>;
   sharedAt: number;
   receivedAt: number;
   status: 'pending' | 'accepted' | 'dismissed';

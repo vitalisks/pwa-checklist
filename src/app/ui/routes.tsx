@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Routes, Route, useParams, useNavigate, useSearchParams, Navigate, useLocation } from 'react-router-dom';
 import type { Template, Checklist } from '@/shared/config';
 import type { IncomingShare } from '@/features/share';
@@ -6,6 +6,8 @@ import { useTemplate } from '@/app/model/template-context';
 import { useChecklist } from '@/app/model/checklist-context';
 import { useShare } from '@/features/share';
 import { useCollaboration } from '@/features/collaboration';
+import { useStorage } from '@/shared/api';
+import { PhotoRepository } from '@/entities/photo';
 import { generateUUID } from '@/shared/lib';
 import { Layout } from '@/widgets/layout';
 import { HomeView } from '@/widgets/home-view';
@@ -33,31 +35,100 @@ const InboxPage: React.FC = () => {
   const { saveTemplate } = useTemplate();
   const { persistChecklist } = useChecklist();
   const { incomingInvites, acceptInvite, declineInvite } = useCollaboration();
+  const storage = useStorage();
+  const photoRepo = useMemo(() => new PhotoRepository(storage), [storage]);
 
   const handleAcceptShare = useCallback(async (share: IncomingShare) => {
-    const payload = await acceptShare(share);
-    if (!payload) return;
+    const result = await acceptShare(share);
+    if (!result) return;
 
+    const { payload, photos } = result;
     const item = JSON.parse(JSON.stringify(payload)) as Template | Checklist;
     item.id = generateUUID();
+
     if (share.type === 'template') {
       const tpl = item as Template;
-      tpl.categories = tpl.categories.map(c => ({
-        ...c,
-        id: generateUUID(),
-        items: c.items.map(i => ({ ...i, id: generateUUID() })),
-      }));
+      const oldToNewItemId = new Map<string, string>();
+      tpl.categories = tpl.categories.map(c => {
+        const newCatId = generateUUID();
+        const newItems = c.items.map(i => {
+          const newItemId = generateUUID();
+          oldToNewItemId.set(i.id, newItemId);
+          return { ...i, id: newItemId };
+        });
+        return { ...c, id: newCatId, items: newItems };
+      });
+
+      if (photos && Object.keys(photos).length > 0) {
+        const oldToNewPhotoId = new Map<string, string>();
+        for (const oldPhotoId of Object.keys(photos)) {
+          const parts = oldPhotoId.split('_');
+          const oldItemId = parts[1];
+          const uuidPart = parts[2];
+          const newItemId = oldToNewItemId.get(oldItemId);
+          if (!newItemId) continue;
+          const newPhotoId = `tpl_${newItemId}_${uuidPart}`;
+          oldToNewPhotoId.set(oldPhotoId, newPhotoId);
+        }
+        for (const [oldPhotoId, dataUrl] of Object.entries(photos)) {
+          const newPhotoId = oldToNewPhotoId.get(oldPhotoId);
+          if (newPhotoId) {
+            await photoRepo.save({ itemId: newPhotoId, dataUrl, updatedAt: Date.now() });
+          }
+        }
+        for (const cat of tpl.categories) {
+          for (const item of cat.items) {
+            item.photoIds = (item.photoIds || []).map((pid: string) => oldToNewPhotoId.get(pid) || pid);
+            if (item.photoIds && item.photoIds.length === 0) item.photoIds = undefined;
+          }
+        }
+      }
+
       await saveTemplate(tpl);
     } else {
       const cl = item as Checklist;
-      cl.categories = cl.categories.map(c => ({
-        ...c,
-        id: generateUUID(),
-        items: c.items.map(i => ({ ...i, id: generateUUID() })),
-      }));
+      const oldToNewItemId = new Map<string, string>();
+      cl.categories = cl.categories.map(c => {
+        const newCatId = generateUUID();
+        const newItems = c.items.map(i => {
+          const newItemId = generateUUID();
+          oldToNewItemId.set(i.id, newItemId);
+          return { ...i, id: newItemId };
+        });
+        return { ...c, id: newCatId, items: newItems };
+      });
+
+      if (photos && Object.keys(photos).length > 0) {
+        const oldToNewPhotoId = new Map<string, string>();
+        for (const oldPhotoId of Object.keys(photos)) {
+          const parts = oldPhotoId.split('_');
+          const prefix = parts[0];
+          const oldItemId = parts[1];
+          const uuidPart = parts[2];
+          const newItemId = oldToNewItemId.get(oldItemId);
+          if (!newItemId) continue;
+          const newPhotoId = `${prefix}_${newItemId}_${uuidPart}`;
+          oldToNewPhotoId.set(oldPhotoId, newPhotoId);
+        }
+        for (const [oldPhotoId, dataUrl] of Object.entries(photos)) {
+          const newPhotoId = oldToNewPhotoId.get(oldPhotoId);
+          if (newPhotoId) {
+            await photoRepo.save({ itemId: newPhotoId, dataUrl, updatedAt: Date.now() });
+          }
+        }
+        for (const cat of cl.categories) {
+          for (const item of cat.items) {
+            item.photoIds = (item.photoIds || []).map((pid: string) => oldToNewPhotoId.get(pid) || pid);
+            item.guidePhotoIds = (item.guidePhotoIds || []).map((pid: string) => oldToNewPhotoId.get(pid) || pid);
+            if (item.photoIds && item.photoIds.length === 0) item.photoIds = undefined;
+            if (item.guidePhotoIds && item.guidePhotoIds.length === 0) item.guidePhotoIds = undefined;
+          }
+        }
+      }
+
       await persistChecklist(cl);
     }
-  }, [acceptShare, saveTemplate, persistChecklist]);
+  }, [acceptShare, saveTemplate, persistChecklist, photoRepo]);
 
   return (
     <InboxView

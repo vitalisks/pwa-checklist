@@ -1,6 +1,6 @@
 import type { Template, Checklist, ChecklistPhoto, Contact } from '@/shared/config';
 import { DB_NAME, DB_VERSION, STORES } from '@/shared/config';
-import type { StoragePort, ImportResult } from './storage-port';
+import type { StoragePort, ImportResult, MetaEntry } from './storage-port';
 
 export class IndexedDBAdapter implements StoragePort {
   private db: IDBDatabase | null = null;
@@ -35,6 +35,9 @@ export class IndexedDBAdapter implements StoragePort {
         if (!db.objectStoreNames.contains(STORES.CONTACTS)) {
           db.createObjectStore(STORES.CONTACTS, { keyPath: 'deviceId' });
         }
+        if (!db.objectStoreNames.contains(STORES.META)) {
+          db.createObjectStore(STORES.META, { keyPath: 'id' });
+        }
       };
     });
   }
@@ -55,6 +58,17 @@ export class IndexedDBAdapter implements StoragePort {
       const request = store.getAll();
 
       request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  private async getById<T>(storeName: string, id: string): Promise<T | undefined> {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || undefined);
       request.onerror = () => reject(request.error);
     });
   }
@@ -199,11 +213,25 @@ export class IndexedDBAdapter implements StoragePort {
     return this.clear(STORES.CONTACTS);
   }
 
+  async getMeta<T>(key: string): Promise<T | undefined> {
+    const entry = await this.getById<MetaEntry>(STORES.META, key);
+    return entry?.value as T | undefined;
+  }
+
+  async setMeta(key: string, value: unknown): Promise<void> {
+    return this.put(STORES.META, { id: key, value } as MetaEntry);
+  }
+
+  async deleteMeta(key: string): Promise<void> {
+    return this.delete(STORES.META, key);
+  }
+
   async clearAll(): Promise<void> {
     await this.clearTemplates();
     await this.clearChecklists();
     await this.clearPhotos();
     await this.clearContacts();
+    await this.clear(STORES.META);
   }
 
   async exportAll(): Promise<void> {

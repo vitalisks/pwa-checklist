@@ -107,9 +107,9 @@ interface SharingContextType {
   addContactFromCode: (code: string, customName?: string) => Promise<string | null>;
   updateContact: (deviceId: string, updates: Partial<Pick<Contact, 'name'>>) => Promise<void>;
   removeContact: (deviceId: string) => Promise<void>;
-  shareChecklist: (contact: Contact, checklist: Checklist) => Promise<boolean>;
-  shareTemplate: (contact: Contact, template: Template) => Promise<boolean>;
-  acceptShare: (share: IncomingShare) => Promise<Template | Checklist | null>;
+  shareChecklist: (contact: Contact, checklist: Checklist, photos?: Record<string, string>) => Promise<boolean>;
+  shareTemplate: (contact: Contact, template: Template, photos?: Record<string, string>) => Promise<boolean>;
+  acceptShare: (share: IncomingShare) => Promise<{ payload: Template | Checklist; photos?: Record<string, string> } | null>;
   dismissShare: (share: IncomingShare) => Promise<void>;
 }
 
@@ -158,6 +158,7 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           senderName: entry.senderName as string | undefined,
           title: entry.title as string,
           data: entry.payloadData as string,
+          photos: entry.photos as Record<string, string> | undefined,
           sharedAt: entry.sharedAt as number,
           receivedAt: Date.now(),
           status: 'pending',
@@ -178,6 +179,7 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               senderName: entry.senderName as string | undefined,
               title: entry.title as string,
               data: entry.payloadData as string,
+              photos: entry.photos as Record<string, string> | undefined,
               sharedAt: entry.sharedAt as number,
               receivedAt: Date.now(),
               status: 'pending',
@@ -272,6 +274,7 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     contact: Contact,
     payload: Template | Checklist,
     itemType: 'template' | 'checklist',
+    photos?: Record<string, string>,
   ): Promise<boolean> => {
     const title = 'title' in payload ? payload.title : 'Untitled';
     const data = JSON.stringify(payload);
@@ -283,6 +286,7 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       itemType,
       title,
       payloadData: data,
+      photos,
       sharedAt: Date.now(),
     });
 
@@ -296,13 +300,13 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   }, [deviceId, deviceName, contactRepo]);
 
-  const shareChecklist = useCallback((contact: Contact, checklist: Checklist) =>
-    shareHelper(contact, checklist, 'checklist'), [shareHelper]);
+  const shareChecklist = useCallback((contact: Contact, checklist: Checklist, photos?: Record<string, string>) =>
+    shareHelper(contact, checklist, 'checklist', photos), [shareHelper]);
 
-  const shareTemplate = useCallback((contact: Contact, template: Template) =>
-    shareHelper(contact, template, 'template'), [shareHelper]);
+  const shareTemplate = useCallback((contact: Contact, template: Template, photos?: Record<string, string>) =>
+    shareHelper(contact, template, 'template', photos), [shareHelper]);
 
-  const acceptShare = useCallback(async (share: IncomingShare): Promise<Template | Checklist | null> => {
+  const acceptShare = useCallback(async (share: IncomingShare): Promise<{ payload: Template | Checklist; photos?: Record<string, string> } | null> => {
     try {
       const parsed = JSON.parse(share.data) as Template | Checklist;
       await removeShareFromInbox(deviceId, share.shareId);
@@ -311,7 +315,7 @@ export const ShareProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           s.shareId === share.shareId ? { ...s, status: 'accepted' as const } : s,
         ),
       );
-      return parsed;
+      return { payload: parsed, photos: share.photos };
     } catch {
       return null;
     }

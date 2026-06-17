@@ -23,7 +23,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
   const { t, language } = useTranslation();
   const navigate = useNavigate();
   const { checklists, deleteChecklist } = useChecklist();
-  const { isCollaborative } = useCollaboration();
+  const { isCollaborative, stopCollaboration } = useCollaboration();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [exportTarget, setExportTarget] = useState<Checklist | null>(null);
   const [filter, setFilter] = useState<Filter>('active');
@@ -61,8 +61,11 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
     navigate('/checklist/new', { state: { draft } });
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deleteTarget) {
+      if (isCollaborative(deleteTarget)) {
+        await stopCollaboration(deleteTarget);
+      }
       deleteChecklist(deleteTarget);
       setDeleteTarget(null);
     }

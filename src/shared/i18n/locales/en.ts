@@ -162,6 +162,9 @@ const en: Translations = {
     notificationsOff: 'Tap to enable notifications for incoming shares',
     noIncoming: 'No incoming shares yet.',
     setupFirebase: 'Set up Firebase to enable sharing.',
+    photos: 'Photos',
+    loadingPhotos: 'Loading photos...',
+    photoTooLarge: 'Photo too large — remove it to share',
   },
   collaboration: {
     shared: 'Shared',

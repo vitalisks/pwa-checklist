@@ -114,4 +114,5 @@ export interface CollaborativeChecklist {
   templateTitle?: string;
   metadata: string;
   updatedAt: number;
+  photoDataUrls?: Record<string, string>;
 }

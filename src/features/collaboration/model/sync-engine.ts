@@ -1,7 +1,7 @@
-import type { Checklist, CollaborativeChecklist, CollaborativeCategory, CollaborativeItem } from '@/shared/config';
+import type { Checklist, ChecklistComment, CollaborativeChecklist, CollaborativeCategory, CollaborativeItem } from '@/shared/config';
 
 function toCollaborativeItem(
-  item: { id: string; text: string; description?: string; checked: boolean; skipped?: boolean; photoIds?: string[]; guidePhotoIds?: string[]; imageLinks?: string[] },
+  item: { id: string; text: string; description?: string; checked: boolean; skipped?: boolean; photoIds?: string[]; guidePhotoIds?: string[]; imageLinks?: string[]; comments?: ChecklistComment[] },
   updatedBy: string,
   updatedAt?: number,
 ): CollaborativeItem {
@@ -14,6 +14,7 @@ function toCollaborativeItem(
     photoIds: item.photoIds,
     guidePhotoIds: item.guidePhotoIds,
     imageLinks: item.imageLinks,
+    comments: item.comments,
     updatedAt: updatedAt ?? Date.now(),
     updatedBy,
   };
@@ -23,6 +24,7 @@ export function toCollaborativeChecklist(
   checklist: Checklist,
   ownerDeviceId: string,
   collaborators: string[],
+  photoDataUrls?: Record<string, string>,
 ): CollaborativeChecklist {
   return {
     id: checklist.id,
@@ -41,6 +43,7 @@ export function toCollaborativeChecklist(
     templateTitle: checklist.templateTitle,
     metadata: checklist.metadata,
     updatedAt: Date.now(),
+    ...(photoDataUrls && { photoDataUrls }),
   };
 }
 
@@ -66,6 +69,7 @@ export function toChecklist(collab: CollaborativeChecklist): Checklist {
             photoIds: item.photoIds,
             guidePhotoIds: item.guidePhotoIds,
             imageLinks: item.imageLinks,
+            comments: item.comments,
           })),
       })),
     createdAt: collab.createdAt,
@@ -130,7 +134,7 @@ export function mergeChecklists(
   };
 }
 
-type EditableFields = Pick<CollaborativeItem, 'checked' | 'skipped' | 'text' | 'description' | 'photoIds' | 'guidePhotoIds' | 'imageLinks' | 'deleted'>;
+type EditableFields = Pick<CollaborativeItem, 'checked' | 'skipped' | 'text' | 'description' | 'photoIds' | 'guidePhotoIds' | 'imageLinks' | 'comments' | 'deleted'>;
 
 export function applyLocalEdit(
   collab: CollaborativeChecklist,

@@ -70,6 +70,7 @@ export async function addShareToInbox(
     itemType: 'template' | 'checklist';
     title: string;
     payloadData: string;
+    photos?: Record<string, string>;
     sharedAt: number;
   },
 ): Promise<boolean> {

@@ -162,6 +162,9 @@ const lv: Translations = {
     notificationsOff: 'Pieskarieties, lai iespējotu paziņojumus par ienākošajiem kopīgojumiem',
     noIncoming: 'Vēl nav ienākošu kopīgojumu.',
     setupFirebase: 'Iestatiet Firebase, lai iespējotu kopīgošanu.',
+    photos: 'Photos',
+    loadingPhotos: 'Loading photos...',
+    photoTooLarge: 'Photo too large — remove it to share',
   },
   collaboration: {
     shared: 'Kopīgots',

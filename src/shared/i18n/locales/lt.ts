@@ -162,6 +162,9 @@ const lt: Translations = {
     notificationsOff: 'Palieskite, kad įjungtumėte pranešimus apie gaunamus bendrinimus',
     noIncoming: 'Gaunamų bendrinimų dar nėra.',
     setupFirebase: 'Nustatykite Firebase, kad įgalintumėte bendrinimą.',
+    photos: 'Photos',
+    loadingPhotos: 'Loading photos...',
+    photoTooLarge: 'Photo too large — remove it to share',
   },
   collaboration: {
     shared: 'Bendrinama',

@@ -162,6 +162,9 @@ const et: Translations = {
     notificationsOff: 'Teavituste lubamiseks puudutage',
     noIncoming: 'Sissetulevaid jagamisi pole veel.',
     setupFirebase: 'Seadistage Firebase, et jagamine võimaldada.',
+    photos: 'Photos',
+    loadingPhotos: 'Loading photos...',
+    photoTooLarge: 'Photo too large — remove it to share',
   },
   collaboration: {
     shared: 'Jagatud',
