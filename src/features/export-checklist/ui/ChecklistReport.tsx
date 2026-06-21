@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Checklist } from '@/shared/config'
+import { computeProgress } from '@/shared/lib'
 import styles from './ChecklistReport.module.css'
 
 const CHECK_ICON = '\u2713'
@@ -37,11 +38,9 @@ const DEFAULT_LABELS: ChecklistReportLabels = {
 export const ChecklistReport: React.FC<ChecklistReportProps> = ({ checklist, language = 'en', labels: labelsProp, comment }) => {
   const labels = { ...DEFAULT_LABELS, ...labelsProp }
 
+  const progress = computeProgress(checklist)
   const totalItems = checklist.categories.reduce((acc, c) => acc + c.items.length, 0)
-  const processedItems = checklist.categories.reduce(
-    (acc, c) => acc + c.items.filter(i => i.checked || i.skipped).length, 0
-  )
-  const progress = totalItems > 0 ? Math.round((processedItems / totalItems) * 100) : 0
+  const processedItems = totalItems > 0 ? Math.round((progress / 100) * totalItems) : 0
   const statusLabel = checklist.status === 'completed' ? labels.completed : labels.active
 
   const locale =

@@ -28,8 +28,8 @@ interface DndEditorProps {
   descValues: Record<string, string>;
   showValidation: boolean;
   handlers: EditorHandlers;
-  onDragStart?: (event: DragStartEvent) => void;
-  onDragEnd?: (event: DragEndEvent) => void;
+  onDragStart: (event: DragStartEvent) => void;
+  onDragEnd: (event: DragEndEvent) => void;
 }
 
 export function DndEditor({
@@ -46,75 +46,12 @@ export function DndEditor({
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
-    onDragStart?.(event);
+    onDragStart(event);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
     setActiveId(null);
-    if (onDragEnd) {
-      onDragEnd(event);
-      return;
-    }
-    if (!over || active.id === over.id) return;
-
-    const isCategory = categories.some(c => c.id === active.id);
-    if (isCategory) {
-      const oldIndex = categories.findIndex(c => c.id === active.id);
-      const newIndex = categories.findIndex(c => c.id === over.id);
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const moved = [...categories];
-        const [removed] = moved.splice(oldIndex, 1);
-        moved.splice(newIndex, 0, removed);
-        handlers.commit(moved);
-      }
-      return;
-    }
-
-    const catWithItem = categories.find(c => c.items.some(i => i.id === active.id));
-    if (!catWithItem) return;
-    const activeItem = catWithItem.items.find(i => i.id === active.id);
-    if (!activeItem) return;
-
-    const sourceCatId = catWithItem.id;
-    let targetCatId = sourceCatId;
-    let targetIndex = -1;
-
-    if (categories.some(c => c.id === over.id)) {
-      targetCatId = over.id as string;
-      targetIndex = -1;
-    } else {
-      const targetItemCat = categories.find(c => c.items.some(i => i.id === over.id));
-      if (targetItemCat) {
-        targetCatId = targetItemCat.id;
-        targetIndex = targetItemCat.items.findIndex(i => i.id === over.id);
-      }
-    }
-
-    if (sourceCatId === targetCatId) {
-      if (targetIndex === -1) return;
-      const items = catWithItem.items;
-      const oldIndex = items.findIndex(i => i.id === active.id);
-      if (oldIndex !== targetIndex) {
-        const moved = [...items];
-        const [removed] = moved.splice(oldIndex, 1);
-        moved.splice(targetIndex, 0, removed);
-        handlers.commit(categories.map(c =>
-          c.id === sourceCatId ? { ...c, items: moved } : c
-        ));
-      }
-    } else {
-      handlers.commit(categories.map(c => {
-        if (c.id === sourceCatId) return { ...c, items: c.items.filter(i => i.id !== active.id) };
-        if (c.id === targetCatId) {
-          const newItems = [...c.items];
-          if (targetIndex !== -1) newItems.splice(targetIndex, 0, activeItem);
-          else newItems.push(activeItem);
-          return { ...c, items: newItems };
-        }
-        return c;
-      }));
-    }
+    onDragEnd(event);
   };
 
   const handleDragCancel = () => setActiveId(null);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft, Pencil, Save, FileText, Share2, Download, Users, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/shared/i18n';
-import { getAvatarColor, getInitials } from './utils';
+import { getAvatarColor, getInitials } from '@/shared/lib';
 
 interface CollaboratorAvatar {
   id: string;

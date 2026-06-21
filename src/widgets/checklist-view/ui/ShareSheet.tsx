@@ -4,7 +4,7 @@ import { useTranslation } from '@/shared/i18n';
 import type { Contact } from '@/shared/config';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DialogPortal } from '@/shared/ui';
-import { getAvatarColor, getInitials } from './utils';
+import { getAvatarColor, getInitials } from '@/shared/lib';
 import styles from './ChecklistView.module.css';
 
 interface ShareSheetProps {

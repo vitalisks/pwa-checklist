@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useShare } from '../model';
 import { useTranslation } from '@/shared/i18n';
 import { DialogPortal } from '@/shared/ui';
+import { getAvatarColor, getInitials } from '@/shared/lib';
 import SendShareDialog from './SendShareDialog';
 import { Share2, X, Users } from 'lucide-react';
 import type { Contact, Template, Checklist } from '@/shared/config';
@@ -11,29 +12,6 @@ import styles from './QuickShareButton.module.css';
 interface Props {
   item: Template | Checklist;
   itemType: 'template' | 'checklist';
-}
-
-const AVATAR_COLORS = [
-  '#5bbd7e', '#4a9eff', '#e8a44a', '#d45b8a',
-  '#6c5ce7', '#00b894', '#fd79a8', '#0984e3',
-];
-
-function getAvatarColor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash) + id.charCodeAt(i);
-    hash |= 0;
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase() || '?';
 }
 
 const QuickShareButton: React.FC<Props> = ({ item, itemType }) => {

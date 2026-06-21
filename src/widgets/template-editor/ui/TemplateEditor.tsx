@@ -98,6 +98,8 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
         itemValues={editorState.itemValues}
         descValues={editorState.descValues}
         handlers={editorState.handlers}
+        onDragStart={editorState.handleDragStart}
+        onDragEnd={editorState.handleDragEnd}
       />
 
       {showRequiredDialog && (

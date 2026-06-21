@@ -10,6 +10,7 @@ import { QuickShareButton } from '@/features/share';
 import { ExportChecklistDialog } from '@/features/export-checklist';
 import { useCollaboration } from '@/features/collaboration';
 import { createBlankChecklist } from '@/features/create-checklist';
+import { computeProgress } from '@/shared/lib';
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -46,15 +47,6 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
       return true;
     })
     .sort((a, b) => b.createdAt - a.createdAt);
-
-  const getProgress = (checklist: Checklist) => {
-    const total = checklist.categories.reduce((acc, cat) => acc + cat.items.length, 0);
-    const processed = checklist.categories.reduce(
-      (acc, cat) => acc + cat.items.filter(i => i.checked || i.skipped).length,
-      0
-    );
-    return total > 0 ? Math.round((processed / total) * 100) : 0;
-  };
 
   const handleCreateBlank = async () => {
     const draft = createBlankChecklist();
@@ -119,7 +111,7 @@ const ChecklistList: React.FC<ChecklistListProps> = ({
       ) : (
         <div className="space-y-2">
           {filteredChecklists.map((checklist) => {
-            const progress = getProgress(checklist);
+            const progress = computeProgress(checklist);
             return (
               <motion.div
                 key={checklist.id}

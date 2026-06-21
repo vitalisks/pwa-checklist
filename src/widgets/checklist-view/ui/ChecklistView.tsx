@@ -9,7 +9,7 @@ import { ExportChecklistDialog } from '@/features/export-checklist';
 import { PhotoLightbox } from '@/features/manage-photos';
 import { useCollaboration, CollaboratorPicker } from '@/features/collaboration';
 import { AnimatePresence } from 'framer-motion';
-import { generateUUID } from '@/shared/lib';
+import { generateUUID, computeProgress } from '@/shared/lib';
 import { useChecklistViewDialogs } from './useChecklistViewDialogs';
 import ReadToolbar from './ReadToolbar';
 import CheckListTitleCard from './ChecklistTitleCard';
@@ -79,13 +79,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
     onViewPhotos: handleViewPhotos,
   });
 
-  const { progress } = useMemo(() => {
-    const total = currentChecklist.categories.reduce((acc, cat) => acc + cat.items.length, 0);
-    const processed = currentChecklist.categories.reduce(
-      (acc, cat) => acc + cat.items.filter((i) => i.checked || i.skipped).length, 0
-    );
-    return { progress: total > 0 ? (processed / total) * 100 : 0 };
-  }, [currentChecklist]);
+  const progress = useMemo(() => computeProgress(currentChecklist), [currentChecklist]);
 
   const isCompleted = progress === 100 && currentChecklist.status !== 'completed';
 
@@ -214,6 +208,8 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
             itemValues={editorState.itemValues}
             descValues={editorState.descValues}
             handlers={editorState.handlers}
+            onDragStart={editorState.handleDragStart}
+            onDragEnd={editorState.handleDragEnd}
           />
         ) : (
           <ReadContent
