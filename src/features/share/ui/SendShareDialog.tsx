@@ -3,12 +3,13 @@ import { motion } from 'framer-motion';
 import { useTranslation } from '@/shared/i18n';
 import { useShare } from '../model';
 import { BottomSheet } from '@/shared/ui';
-import { getAvatarColor, getInitials } from '@/shared/lib';
 import type { Contact, Template, Checklist } from '@/shared/config';
-import { Send, Check, FileText, ClipboardList, Image, AlertCircle, Loader } from 'lucide-react';
+import { Send, Check, Loader } from 'lucide-react';
 import { compressDataUrl, estimateBase64Size } from '@/shared/lib/image/compressImage';
 import { PhotoRepository } from '@/entities/photo';
 import { useStorage } from '@/shared/api';
+import { SendShareHeader } from './SendShareHeader';
+import { PhotoSelectionGrid } from './PhotoSelectionGrid';
 import styles from './SendShareDialog.module.css';
 
 interface Props {
@@ -205,27 +206,7 @@ const SendShareDialog: React.FC<Props> = ({ contact, item, itemType, onClose }) 
   return (
     <BottomSheet isOpen onClose={onClose} title={sheetTitle} footer={sheetFooter}>
       <div className={styles.body}>
-        <div className={styles.recipientRow}>
-          <div className={styles.avatar} style={{ background: getAvatarColor(contact.deviceId) }}>
-            {getInitials(contact.name)}
-          </div>
-          <div>
-            <div className={styles.recipientName}>{contact.name}</div>
-            <div className={styles.recipientLabel}>{contact.deviceId.slice(0, 8)}</div>
-          </div>
-        </div>
-
-        <div className={styles.itemPreview}>
-          <div className={`${styles.itemIcon} ${itemType === 'template' ? styles.itemIconTemplate : styles.itemIconChecklist}`}>
-            {itemType === 'template' ? <FileText size={18} /> : <ClipboardList size={18} />}
-          </div>
-          <div className={styles.itemInfo}>
-            <div className={styles.itemTitle}>{title}</div>
-            <div className={`${styles.itemType} ${itemType === 'template' ? styles.itemTypeTemplate : styles.itemTypeChecklist}`}>
-              {itemType === 'template' ? t.templates.title : t.nav.home}
-            </div>
-          </div>
-        </div>
+        <SendShareHeader contact={contact} itemType={itemType} title={title} typeLabel={itemType === 'template' ? t.templates.title : t.nav.home} />
 
         {photosState.loading && (
           <div className={styles.photosLoading}>
@@ -234,39 +215,14 @@ const SendShareDialog: React.FC<Props> = ({ contact, item, itemType, onClose }) 
           </div>
         )}
 
-        {!photosState.loading && photosState.entries.length > 0 && (
-          <div className={styles.photosSection}>
-            <div className={styles.photosSectionHeader}>
-              <Image size={12} />
-              <span>{t.share.photos} ({photosState.selectedIds.size}/{photosState.entries.length})</span>
-              <span className={styles.totalSize}>{totalSizeKb}KB</span>
-            </div>
-            <div className={styles.photosGrid}>
-              {photosState.entries.map((entry) => (
-                <button
-                  key={entry.id}
-                  className={`${styles.photoThumb} ${entry.tooLarge ? styles.photoThumbTooLarge : ''} ${!photosState.selectedIds.has(entry.id) ? styles.photoThumbDeselected : ''}`}
-                  onClick={() => togglePhoto(entry.id)}
-                  title={entry.id}
-                >
-                  <img src={entry.dataUrl} alt="" />
-                  <span className={`${styles.photoSize} ${entry.tooLarge ? styles.photoSizeDanger : entry.sizeKb > 100 ? styles.photoSizeWarning : styles.photoSizeOk}`}>
-                    {entry.sizeKb}KB
-                  </span>
-                  {!photosState.selectedIds.has(entry.id) && (
-                    <span className={styles.photoDimmed} />
-                  )}
-                </button>
-              ))}
-            </div>
-            {photosState.tooLargeError && (
-              <div className={styles.photoError}>
-                <AlertCircle size={12} />
-                <span>{photosState.tooLargeError}</span>
-              </div>
-            )}
-          </div>
-        )}
+        <PhotoSelectionGrid
+          entries={photosState.entries}
+          selectedIds={photosState.selectedIds}
+          tooLargeError={photosState.tooLargeError}
+          totalSizeKb={totalSizeKb}
+          photosLabel={t.share.photos}
+          onToggle={togglePhoto}
+        />
 
         {sendError && <div className={styles.error}>{sendError}</div>}
       </div>
