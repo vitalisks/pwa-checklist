@@ -26,7 +26,11 @@ export async function getFirestoreInstance(): Promise<Firestore | null> {
   const fb = await getFirebaseApp();
   if (!fb) return null;
 
-  const { getFirestore } = await import('firebase/firestore');
-  firestore = getFirestore(fb);
+  // Use long polling to avoid CORS issues with Firestore WebChannel
+  // in environments where the API key referrer restricts the origin.
+  const { initializeFirestore } = await import('firebase/firestore');
+  firestore = initializeFirestore(fb, {
+    experimentalForceLongPolling: true,
+  });
   return firestore;
 }

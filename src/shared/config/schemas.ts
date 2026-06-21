@@ -109,6 +109,8 @@ export interface CollaborativeChecklist {
   categories: CollaborativeCategory[];
   ownerDeviceId: string;
   collaborators: string[];
+  ownerUid?: string;
+  allowedUids?: string[];
   createdAt: number;
   templateId?: string;
   templateTitle?: string;

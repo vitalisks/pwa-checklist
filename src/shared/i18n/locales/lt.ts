@@ -177,6 +177,12 @@ const lt: Translations = {
     addedCollaborator: 'Bendradarbis pridėtas!',
     added: 'Pridėta',
     invitationLabel: 'Bendradarbiavimo kvietimai',
+    makePublic: 'Kiekvienas, turintis nuorodą, gali peržiūrėti',
+    unregisteredWarning: 'Kai kurie kontaktai nėra registruoti — sąrašas bus viešas',
+    public: 'Viešas',
+    private: 'Privatus',
+    publicDesc: 'Kiekvienas, turintis bendradarbiavimo nuorodą, gali peržiūrėti ir redaguoti šį sąrašą',
+    privateDesc: 'Tik jūs ir pakviesti bendradarbiai gali peržiūrėti ir redaguoti',
   },
   export: {
     export: 'Eksportuoti',
@@ -191,6 +197,13 @@ const lt: Translations = {
     noCategories: 'Nėra kategorijų',
     comment: 'Komentaras',
     commentPlaceholder: 'Pridėkite vykdymo pastabą ataskaitai...',
+  },
+  auth: {
+    signIn: 'Prisijungti',
+    signOut: 'Atsijungti',
+    account: 'Paskyra',
+    signInDesc: 'Prisijunkite, kad apsaugotumėte bendrinamus sąrašus prieigos teisėmis.',
+    signingIn: 'Prisijungiama...',
   },
 }
 

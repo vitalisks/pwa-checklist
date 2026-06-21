@@ -4,30 +4,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import type { Contact, Template, Checklist } from '@/shared/config';
 import { useStorage } from '@/shared/api';
 import { ContactRepository } from '@/entities/contact';
-import { generateUUID } from '@/shared/lib';
+import { generateUUID, getDeviceId, getDeviceName, setDeviceName } from '@/shared/lib';
 import { isFirebaseEnabled } from '../config';
 import { addShareToInbox, removeShareFromInbox, listenToInbox } from '../api/firestore-service';
 import type { IncomingShare } from './share-types';
-
-const DEVICE_ID_KEY = 'moirai-device-id';
-const DEVICE_NAME_KEY = 'moirai-device-name';
-
-function getDeviceId(): string {
-  let id = localStorage.getItem(DEVICE_ID_KEY);
-  if (!id) {
-    id = generateUUID();
-    localStorage.setItem(DEVICE_ID_KEY, id);
-  }
-  return id;
-}
-
-function getDeviceName(): string {
-  return localStorage.getItem(DEVICE_NAME_KEY) ?? '';
-}
-
-function setDeviceName(name: string): void {
-  localStorage.setItem(DEVICE_NAME_KEY, name);
-}
 
 function encodeContactCode(deviceId: string, name: string): string {
   const json = JSON.stringify({ v: 1, d: deviceId, n: name });

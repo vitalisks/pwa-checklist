@@ -11,6 +11,7 @@ import { isFirebaseEnabled } from '@/features/share/config';
 import {
   createCollaborativeChecklist,
   updateCollaborativeChecklist,
+  updateCollaborativeChecklistFields,
   deleteCollaborativeChecklist,
   listenForCollaborativeChecklist,
   addCollaboratorToFirestore,
@@ -28,6 +29,23 @@ import {
 } from './sync-engine';
 import { generateUUID } from '@/shared/lib';
 
+export async function readDeviceUidMapping(deviceId: string): Promise<string | null> {
+  const { getFirestoreInstance } = await import('@/features/share/api/firebase-init');
+  const db = await getFirestoreInstance();
+  if (!db) return null;
+  const { doc, getDoc } = await import('firebase/firestore');
+  try {
+    const snap = await getDoc(doc(db, 'device_uid_mappings', deviceId));
+    if (snap.exists()) {
+      const data = snap.data() as { uid: string };
+      return data.uid;
+    }
+  } catch {
+    // Non-critical
+  }
+  return null;
+}
+
 export interface IncomingInvite {
   checklistId: string;
   ownerDeviceId: string;
@@ -42,8 +60,8 @@ interface CollaborationContextType {
   incomingInvites: IncomingInvite[];
   isCollaborative: (id: string) => boolean;
   getCollaboratorIds: (checklistId: string) => string[];
-  enableCollaboration: (checklist: Checklist, collaboratorDeviceIds: string[]) => Promise<boolean>;
-  addCollaborator: (checklistId: string, deviceId: string) => Promise<boolean>;
+  enableCollaboration: (checklist: Checklist, collaboratorDeviceIds: string[], authInfo?: { ownerUid?: string }) => Promise<boolean>;
+  addCollaborator: (checklistId: string, deviceId: string, allowedUid?: string) => Promise<boolean>;
   acceptInvite: (checklistId: string) => Promise<void>;
   declineInvite: (checklistId: string) => Promise<void>;
   toggleItem: (checklist: Checklist, categoryId: string, itemId: string, field: 'checked' | 'skipped') => void;
@@ -305,6 +323,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
   const enableCollaboration = useCallback(async (
     checklist: Checklist,
     collaboratorDeviceIds: string[],
+    authInfo?: { ownerUid?: string },
   ): Promise<boolean> => {
     // Load all existing photo data URLs for the invitees
     const allPhotoIds = collectPhotoIds(checklist);
@@ -314,9 +333,20 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
       if (photo) photoDataUrls[photoId] = photo.dataUrl;
     }
 
+    const allowedUids: string[] = [];
+    if (authInfo?.ownerUid) {
+      allowedUids.push(authInfo.ownerUid);
+      // Look up UIDs for collaborator device IDs
+      for (const collabDeviceId of collaboratorDeviceIds) {
+        const mapping = await readDeviceUidMapping(collabDeviceId);
+        if (mapping) allowedUids.push(mapping);
+      }
+    }
+
     const collab = toCollaborativeChecklist(
       checklist, deviceId, [deviceId, ...collaboratorDeviceIds],
       Object.keys(photoDataUrls).length > 0 ? photoDataUrls : undefined,
+      authInfo?.ownerUid ? { ownerUid: authInfo.ownerUid, allowedUids: allowedUids.length > 1 ? allowedUids : undefined } : undefined,
     );
     const ok = await createCollaborativeChecklist(collab);
     if (ok) {
@@ -341,6 +371,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
   const addCollaborator = useCallback(async (
     checklistId: string,
     deviceIdToAdd: string,
+    allowedUid?: string,
   ): Promise<boolean> => {
     const existing = collabCache.current.get(checklistId);
     if (!existing) return false;
@@ -348,12 +379,23 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const ok = await addCollaboratorToFirestore(checklistId, deviceIdToAdd);
     if (ok) {
-      const updated = {
+      const newAllowedUids = existing.allowedUids ? [...existing.allowedUids] : [];
+      if (allowedUid && !newAllowedUids.includes(allowedUid)) {
+        newAllowedUids.push(allowedUid);
+      }
+
+      const updated: CollaborativeChecklist = {
         ...existing,
         collaborators: [...existing.collaborators, deviceIdToAdd],
+        ...(newAllowedUids.length > 0 ? { allowedUids: newAllowedUids } : {}),
       };
       collabCache.current.set(checklistId, updated);
       await inviteCollaborator(deviceIdToAdd, checklistId, deviceId, updated.title);
+
+      // Update Firestore with new allowedUids as well
+      if (allowedUid) {
+        await updateCollaborativeChecklistFields(checklistId, { allowedUids: newAllowedUids });
+      }
     }
     return ok;
   }, [deviceId]);

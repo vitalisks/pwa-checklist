@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/shared/i18n';
 import { DialogPortal } from '@/shared/ui';
 import { useShare } from '@/features/share';
-import { useCollaboration } from '../model/collaboration-context';
+import { useAuth } from '@/features/auth';
+import { useCollaboration, readDeviceUidMapping } from '../model/collaboration-context';
 import type { Checklist } from '@/shared/config';
-import { Users, X, Check } from 'lucide-react';
+import { Users, X, Check, Globe, Lock } from 'lucide-react';
 import styles from './CollaboratorPicker.module.css';
 
 interface Props {
@@ -40,12 +41,38 @@ export const CollaboratorPicker: React.FC<Props> = ({ checklist, onClose }) => {
   const { t } = useTranslation();
   const { contacts } = useShare();
   const { isCollaborative, getCollaboratorIds, enableCollaboration, addCollaborator } = useCollaboration();
+  const { isAuthenticated, authState } = useAuth();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [makePublic, setMakePublic] = useState(true);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [uidMapping, setUidMapping] = useState<Map<string, boolean>>(new Map());
 
   const alreadyCollaborative = isCollaborative(checklist.id);
   const existingCollaborators = alreadyCollaborative ? getCollaboratorIds(checklist.id) : [];
+
+  // Fetch UID registration status for all contacts once on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        contacts.map(c => readDeviceUidMapping(c.deviceId).then(Boolean))
+      );
+      if (cancelled) return;
+      const map = new Map<string, boolean>();
+      contacts.forEach((c, i) => map.set(c.deviceId, results[i]));
+      setUidMapping(map);
+    })();
+    return () => { cancelled = true; };
+  }, [contacts]);
+
+  const hasUnregistered = useMemo(
+    () => selected.size > 0 && Array.from(selected).some(d => !uidMapping.get(d)),
+    [selected, uidMapping],
+  );
+
+  // Force public when any collaborator is unregistered
+  const isPublic = makePublic || hasUnregistered;
 
   const toggleContact = (deviceId: string) => {
     if (done) return;
@@ -62,6 +89,17 @@ export const CollaboratorPicker: React.FC<Props> = ({ checklist, onClose }) => {
     if (selected.size === 0) return;
     setSaving(true);
 
+    // Determine auth protection level
+    let authInfo: { ownerUid: string } | undefined;
+    if (isAuthenticated && !makePublic && authState.user) {
+      const uidResults = await Promise.all(
+        Array.from(selected).map(d => readDeviceUidMapping(d).then(Boolean))
+      );
+      if (uidResults.every(Boolean)) {
+        authInfo = { ownerUid: authState.user.uid };
+      }
+    }
+
     if (alreadyCollaborative) {
       const selectedArr = Array.from(selected);
       let allOk = true;
@@ -74,7 +112,7 @@ export const CollaboratorPicker: React.FC<Props> = ({ checklist, onClose }) => {
         setTimeout(onClose, 1400);
       }
     } else {
-      const ok = await enableCollaboration(checklist, Array.from(selected));
+      const ok = await enableCollaboration(checklist, Array.from(selected), authInfo);
       if (ok) {
         setDone(true);
         setTimeout(onClose, 1400);
@@ -159,6 +197,43 @@ export const CollaboratorPicker: React.FC<Props> = ({ checklist, onClose }) => {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {isAuthenticated && !alreadyCollaborative && selected.size > 0 && (
+            <div className={styles.publicToggle}>
+              <div className={styles.accessStatus}>
+                {isPublic ? (
+                  <><Globe size={12} className={styles.accessIcon} /> {t.collaboration.public}</>
+                ) : (
+                  <><Lock size={12} className={styles.accessIconPrivate} /> {t.collaboration.private}</>
+                )}
+              </div>
+              <label className={styles.toggleLabel}>
+                <span className={styles.toggleText}>
+                  {t.collaboration.makePublic}
+                  <span className={styles.toggleDesc}>
+                    {isPublic
+                      ? t.collaboration.publicDesc
+                      : t.collaboration.privateDesc}
+                  </span>
+                  {hasUnregistered && (
+                    <span className={styles.warningText}>
+                      {t.collaboration.unregisteredWarning}
+                    </span>
+                  )}
+                </span>
+                <button
+                  className={`${styles.toggleSwitch} ${isPublic ? styles.toggleOn : ''}`}
+                  onClick={() => setMakePublic(prev => !prev)}
+                  disabled={hasUnregistered}
+                  type="button"
+                  role="switch"
+                  aria-checked={isPublic}
+                >
+                  <span className={styles.toggleKnob} />
+                </button>
+              </label>
             </div>
           )}
 

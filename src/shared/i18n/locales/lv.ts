@@ -177,6 +177,12 @@ const lv: Translations = {
     addedCollaborator: 'Līdzstrādnieks pievienots!',
     added: 'Pievienots',
     invitationLabel: 'Sadarbības uzaicinājumi',
+    makePublic: 'Ikviena persona ar saiti var skatīt',
+    unregisteredWarning: 'Daži kontakti nav reģistrēti — saraksts būs publisks',
+    public: 'Publisks',
+    private: 'Privāts',
+    publicDesc: 'Ikviena persona ar sadarbības saiti var skatīt un rediģēt šo sarakstu',
+    privateDesc: 'Tikai jūs un uzaicinātie līdzstrādnieki var skatīt un rediģēt',
   },
   export: {
     export: 'Eksportēt',
@@ -191,6 +197,13 @@ const lv: Translations = {
     noCategories: 'Nav kategoriju',
     comment: 'Komentārs',
     commentPlaceholder: 'Pievienot izpildes piezīmi atskaitei...',
+  },
+  auth: {
+    signIn: 'Pierakstīties',
+    signOut: 'Izrakstīties',
+    account: 'Konts',
+    signInDesc: 'Pierakstieties, lai aizsargātu koplietotos sarakstus ar piekļuves tiesībām.',
+    signingIn: 'Notiek pierakstīšanās...',
   },
 }
 

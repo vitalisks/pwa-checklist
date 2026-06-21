@@ -17,6 +17,7 @@ import { SettingsView } from '@/widgets/settings-view';
 import { ChecklistView } from '@/widgets/checklist-view';
 import { TemplateEditor } from '@/widgets/template-editor';
 import { IdeaFlowView } from '@/features/idea-flow';
+import { isOidcConfigured, AuthCallback } from '@/features/auth';
 
 const HomePage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -255,6 +256,7 @@ const AppRoutes: React.FC = () => {
         <Route path="template/new" element={<TemplateEditPage />} />
         <Route path="template/:id/edit" element={<TemplateEditPage />} />
         <Route path="idea-flow" element={<IdeaFlowPage />} />
+        {isOidcConfigured() && <Route path="auth/callback" element={<AuthCallback />} />}
       </Route>
     </Routes>
   );

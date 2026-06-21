@@ -177,6 +177,12 @@ const et: Translations = {
     addedCollaborator: 'Kaastöötaja lisatud!',
     added: 'Lisatud',
     invitationLabel: 'Koostöökutsed',
+    makePublic: 'Igaüks lingiga saab vaadata',
+    unregisteredWarning: 'Mõned kontaktid pole registreeritud — nimekiri on avalik',
+    public: 'Avalik',
+    private: 'Privaatne',
+    publicDesc: 'Igaüks koostöölingiga saab seda nimekirja vaadata ja muuta',
+    privateDesc: 'Ainult sina ja kutsutud kaastöötajad saavad vaadata ja muuta',
   },
   export: {
     export: 'Ekspordi',
@@ -191,6 +197,13 @@ const et: Translations = {
     noCategories: 'Kategooriad puuduvad',
     comment: 'Kommentaar',
     commentPlaceholder: 'Lisa täitmismärkus aruandesse...',
+  },
+  auth: {
+    signIn: 'Logi sisse',
+    signOut: 'Logi välja',
+    account: 'Konto',
+    signInDesc: 'Logi sisse, et kaitsta oma jagatud nimekirju juurdepääsuõigustega.',
+    signingIn: 'Sisselogimine...',
   },
 }
 

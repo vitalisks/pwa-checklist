@@ -177,6 +177,12 @@ const en: Translations = {
     addedCollaborator: 'Collaborator added!',
     added: 'Added',
     invitationLabel: 'Collaboration Invites',
+    makePublic: 'Anyone with the link can view',
+    unregisteredWarning: 'Some contacts are not registered — checklist will be public',
+    public: 'Public',
+    private: 'Private',
+    publicDesc: 'Anyone with the collaboration link can view and edit this checklist',
+    privateDesc: 'Only you and invited collaborators can view and edit',
   },
   export: {
     export: 'Export',
@@ -191,6 +197,13 @@ const en: Translations = {
     noCategories: 'No categories',
     comment: 'Comment',
     commentPlaceholder: 'Add an execution note for the report...',
+  },
+  auth: {
+    signIn: 'Sign In',
+    signOut: 'Sign Out',
+    account: 'Account',
+    signInDesc: 'Sign in to protect your shared checklists with access rights.',
+    signingIn: 'Signing in...',
   },
 }
 

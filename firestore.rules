@@ -1,34 +1,101 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────────
+    function isOwner() {
+      return request.auth != null
+        && request.auth.uid == resource.data.ownerUid;
+    }
+
+    function isAllowed() {
+      return request.auth != null
+        && resource.data.allowedUids != null
+        && resource.data.allowedUids.hasAny([request.auth.uid]);
+    }
+
+    // Documents without ownerUid are public — accessible to anyone.
+    // Auth protection is opt-in: once ownerUid is set, the document
+    // becomes private and only the owner or allowedUids can access it.
+    function isPublic() {
+      return !resource.data.keys().hasAny(['ownerUid']);
+    }
+
+    // ── Inbox (shared_payloads) ────────────────────────────────────
     // Per-device inbox documents (inbox_{deviceId}). Only point reads/writes.
     // The deviceId is embedded in the document ID and in each entry's data,
     // providing path-to-content consistency validation.
+    // When ownerUid is set on the inbox doc, only the authenticated owner
+    // can read it — protecting content sent to registered users.
     match /shared_payloads/{docId} {
       // matches() does a full string match in Firestore rules
-      allow get: if docId.matches('inbox_.*');
+      // If ownerUid is set on the doc, only the authenticated owner can read
+      allow get: if docId.matches('inbox_.*') && (
+        isPublic()
+        || (request.auth != null && request.auth.uid == resource.data.ownerUid)
+      );
 
       // Writes allowed for inbox_* docs (deviceId is a UUID, so path is unguessable)
       allow create, update: if docId.matches('inbox_.*');
 
-      // Never delete the inbox document itself — entries are removed via field delete
-      allow delete: if false;
+      // Only the authenticated owner can delete their inbox doc
+      allow delete: if docId.matches('inbox_.*')
+        && request.auth != null
+        && request.auth.uid == resource.data.ownerUid;
     }
 
-    // Collaborative checklist documents. Accessed by known checklistId only.
+    // ── Collaborative Checklists ───────────────────────────────────
+    // Accessed by known checklistId only.
     // Discovery is via collaborationInvites in the inbox doc, not collection queries.
+    // Auth-protected documents (with ownerUid) require matching request.auth.uid.
+    // Public documents (without ownerUid) remain open to all.
+    //
+    // Field immutability for auth-related fields:
+    //   - ownerUid: once set, only the current owner can change it (to another allowed UID).
+    //   - allowedUids: only the owner can modify; new UIDs must be already-allowed or
+    //     registered to a device already in the collaborators list.
+    //
+    // The collaborators list is the source of truth; allowedUids grants Firebase-level
+    // access to UIDs that correspond to collaborator devices.
     match /collaborative_checklists/{checklistId} {
-      allow get: if true;
+      allow get: if isPublic() || isOwner() || isAllowed();
 
-      // Create: full document must include ownerDeviceId + collaborators
+      // Create: collaborators must be present. ownerUid, if set, must equal request.auth.uid.
+      // allowedUids, if set, must contain ownerUid.
       allow create: if request.resource.data.keys().hasAll(['ownerDeviceId', 'collaborators'])
         && request.resource.data.collaborators is list
-        && request.resource.data.collaborators.size() >= 1;
+        && request.resource.data.collaborators.size() >= 1
+        && (request.resource.data.ownerUid == null
+            || request.resource.data.ownerUid == request.auth.uid)
+        && (request.resource.data.allowedUids == null
+            || (request.resource.data.ownerUid != null
+                && request.resource.data.allowedUids.hasAll([request.resource.data.ownerUid])));
 
-      // Update: allowed once the doc exists (handles field-level updateDoc calls)
-      allow update: if true;
+      // Update: field-level immutability for ownerUid and allowedUids.
+      // - ownerUid: immutable once set; can only be written by the current owner.
+      // - allowedUids: immutable once set; can only be written by the owner.
+      // All other fields are open to isOwner() / isAllowed() for normal use.
+      allow update: if isPublic() || (
+        isOwner() && resource.data.ownerUid == request.auth.uid && (
+          // Prevent any write that introduces or changes ownerUid (once set, immutable)
+          (request.resource.data.ownerUid == null || request.resource.data.ownerUid == resource.data.ownerUid)
+          &&
+          // Prevent any write that introduces or changes allowedUids (once set, immutable)
+          (request.resource.data.allowedUids == null || request.resource.data.allowedUids == resource.data.allowedUids)
+        )
+      ) || isAllowed();
 
-      allow delete: if true;
+      // Delete: only public docs or the owner can delete
+      allow delete: if isPublic() || isOwner();
+    }
+
+    // ── Device-to-UID mapping ─────────────────────────────────────
+    // Used to look up Firebase Auth UIDs by device ID when adding collaborators.
+    match /device_uid_mappings/{deviceId} {
+      allow get: if true;
+      allow create, update: if request.auth != null
+        && request.auth.uid == request.resource.data.uid;
+      allow delete: if false;
     }
   }
 }

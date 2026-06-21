@@ -9,6 +9,7 @@ import { UtilityProvider } from '@/app/model/utility-context';
 import { EditingStateProvider } from '@/features/edit-template';
 import { ShareProvider } from '@/features/share';
 import { CollaborationProvider } from '@/features/collaboration';
+import { AuthProvider } from '@/features/auth';
 import AppRoutes from './ui/routes';
 
 const App: React.FC = () => {
@@ -22,9 +23,11 @@ const App: React.FC = () => {
                 <UtilityProvider>
                   <ShareProvider>
                     <CollaborationProvider>
-                      <EditingStateProvider>
-                        <AppRoutes />
-                      </EditingStateProvider>
+            <EditingStateProvider>
+              <AuthProvider>
+                <AppRoutes />
+              </AuthProvider>
+            </EditingStateProvider>
                     </CollaborationProvider>
                   </ShareProvider>
                 </UtilityProvider>

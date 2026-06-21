@@ -25,6 +25,7 @@ export function toCollaborativeChecklist(
   ownerDeviceId: string,
   collaborators: string[],
   photoDataUrls?: Record<string, string>,
+  authInfo?: { ownerUid: string; allowedUids?: string[] },
 ): CollaborativeChecklist {
   return {
     id: checklist.id,
@@ -38,6 +39,8 @@ export function toCollaborativeChecklist(
     })),
     ownerDeviceId,
     collaborators,
+    ...(authInfo?.ownerUid && { ownerUid: authInfo.ownerUid }),
+    ...(authInfo?.allowedUids && { allowedUids: authInfo.allowedUids }),
     createdAt: checklist.createdAt,
     templateId: checklist.templateId,
     templateTitle: checklist.templateTitle,

@@ -5,6 +5,7 @@ import { useChecklist } from '@/app/model/checklist-context';
 import { useShare, MyCodeCard, ContactsList, SendShareDialog, PickItemDialog } from '@/features/share';
 import { useUtility } from '@/app/model/utility-context';
 import type { Contact, Template, Checklist } from '@/shared/config';
+import { isOidcConfigured, AuthSettings } from '@/features/auth';
 import LanguageSection from './LanguageSection';
 import AppearanceSection from './AppearanceSection';
 import NotificationsSection from './NotificationsSection';
@@ -40,6 +41,7 @@ const SettingsView: React.FC = () => {
 
       <LanguageSection />
       <AppearanceSection />
+      {isOidcConfigured() && <AuthSettings />}
 
       {enabled && (
         <div className="space-y-4">

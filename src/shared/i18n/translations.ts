@@ -189,6 +189,19 @@ export interface Translations {
     addedCollaborator: string
     added: string
     invitationLabel: string
+    makePublic: string
+    unregisteredWarning: string
+    public: string
+    private: string
+    publicDesc: string
+    privateDesc: string
+  }
+  auth: {
+    signIn: string
+    signOut: string
+    account: string
+    signInDesc: string
+    signingIn: string
   }
 }
 
