@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
 import { useTranslation } from '@/shared/i18n';
 import { ConfirmDialog, DialogPortal } from '@/shared/ui';
+import { LightboxImage } from './LightboxImage';
+import { LightboxNavigation } from './LightboxNavigation';
 import styles from './PhotoLightbox.module.css';
 
 interface PhotoLightboxProps {
@@ -90,8 +92,6 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
     }
   }, [onDelete, photoIds, currentIndex, onClose]);
 
-  const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex < photoIds.length - 1;
   const canDelete = onDelete && !photoIds[currentIndex]?.startsWith('http');
 
   return (
@@ -105,81 +105,16 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photoIds, startIndex, onC
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className={styles.topBar}>
-        <button onClick={(e) => { e.stopPropagation(); onClose(); }} className={styles.iconBtn}>
-          <X size={20} />
-        </button>
-        <span className={styles.position}>{currentIndex + 1} / {photoIds.length}</span>
-        <div style={{ width: 36 }} />
-      </div>
+      <LightboxNavigation
+        currentIndex={currentIndex}
+        total={photoIds.length}
+        onClose={onClose}
+        onPrev={goPrev}
+        onNext={goNext}
+        onGoTo={setCurrentIndex}
+      />
 
-      {hasPrev && (
-        <div
-          className={styles.navZone}
-          style={{ left: 0 }}
-          onClick={(e) => { e.stopPropagation(); goPrev(); }}
-        />
-      )}
-      {hasNext && (
-        <div
-          className={styles.navZone}
-          style={{ right: 0 }}
-          onClick={(e) => { e.stopPropagation(); goNext(); }}
-        />
-      )}
-
-      <div className={styles.bottomBar}>
-        <div className={styles.navGroup}>
-          <button
-            onClick={(e) => { e.stopPropagation(); goPrev(); }}
-            className={styles.navBtn}
-            style={{ opacity: hasPrev ? 1 : 0.2, pointerEvents: hasPrev ? 'auto' : 'none' }}
-          >
-            <ChevronLeft size={22} />
-          </button>
-        </div>
-
-        <div className={styles.dots}>
-          {photoIds.map((_, i) => (
-            <button
-              key={i}
-              onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
-              className={`${styles.dot} ${i === currentIndex ? styles.dotActive : ''}`}
-            />
-          ))}
-        </div>
-
-        <div className={styles.navGroup}>
-          <button
-            onClick={(e) => { e.stopPropagation(); goNext(); }}
-            className={styles.navBtn}
-            style={{ opacity: hasNext ? 1 : 0.2, pointerEvents: hasNext ? 'auto' : 'none' }}
-          >
-            <ChevronRight size={22} />
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        </div>
-      ) : dataUrl ? (
-        <motion.img
-          key={currentIndex}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          src={dataUrl}
-          alt="checklist item"
-          className={`max-w-full max-h-full rounded-md object-contain select-none ${isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'}`}
-          onClick={(e) => { e.stopPropagation(); handleImageClick(); }}
-          draggable={false}
-        />
-      ) : (
-        <div className="text-white/40 text-sm" onClick={(e) => e.stopPropagation()}>No image</div>
-      )}
+      <LightboxImage loading={loading} dataUrl={dataUrl} isZoomed={isZoomed} onClick={handleImageClick} />
 
       {canDelete && (
         <button
