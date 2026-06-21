@@ -1,9 +1,10 @@
-import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
+import React, { useRef, useState, useLayoutEffect } from 'react';
 import { Check, Circle, CircleSlash, Camera, Image, MessageSquarePlus, Trash2, X } from 'lucide-react';
 import type { ChecklistItem } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
 import { useTranslation } from '@/shared/i18n';
+import { usePhotoThumbs } from '@/shared/lib/hooks/use-photo-thumbs';
 import { PhotoList } from '@/features/manage-photos';
 import itemStyles from './ChecklistItemRow.module.css';
 import photoStyles from '@/shared/styles/photo-zone.module.css';
@@ -33,9 +34,6 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   const storage = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
-  const [guideThumbs, setGuideThumbs] = useState<Record<string, string>>({});
-  const [loadingGuides, setLoadingGuides] = useState(false);
-  const [captureThumbs, setCaptureThumbs] = useState<Record<string, string>>({});
   const [descExpanded, setDescExpanded] = useState(false);
   const [descClamped, setDescClamped] = useState(false);
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -49,54 +47,12 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
   const imageLinks = item.imageLinks || [];
   const [brokenLinks, setBrokenLinks] = useState<Set<string>>(new Set());
   const hasImageLinks = imageLinks.length > 0;
+  const { thumbs: guideThumbs, loading: loadingGuides } = usePhotoThumbs(guideIds, storage);
+  const { thumbs: captureThumbs } = usePhotoThumbs(captureIds, storage);
   const effectiveGuideThumbs = guideIds.length === 0 ? {} : guideThumbs;
   const effectiveCaptureThumbs = captureIds.length === 0 ? {} : captureThumbs;
   const comments = item.comments || [];
   const hasComments = comments.length > 0;
-
-  const guideIdsKey = guideIds.join(',');
-  useEffect(() => {
-    if (guideIds.length === 0) return;
-    let cancelled = false;
-    const load = async () => {
-      setLoadingGuides(true);
-      const map: Record<string, string> = {};
-      for (const pid of guideIds) {
-        try {
-          const photo = await storage.getPhoto(pid);
-          if (photo && !cancelled) map[pid] = photo.dataUrl;
-        } catch {
-          // ignore
-        }
-      }
-      if (!cancelled) {
-        setGuideThumbs(map);
-        setLoadingGuides(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [guideIdsKey, storage]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const captureIdsKey = captureIds.join(',');
-  useEffect(() => {
-    if (captureIds.length === 0) return;
-    let cancelled = false;
-    const load = async () => {
-      const map: Record<string, string> = {};
-      for (const pid of captureIds) {
-        try {
-          const photo = await storage.getPhoto(pid);
-          if (photo && !cancelled) map[pid] = photo.dataUrl;
-        } catch {
-          // ignore
-        }
-      }
-      if (!cancelled) setCaptureThumbs(map);
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [captureIdsKey, storage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useLayoutEffect(() => {
     const el = descRef.current;

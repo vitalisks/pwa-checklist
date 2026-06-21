@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Camera, ImageIcon, X, GripVertical } from 'lucide-react';
 import { useStorage } from '@/shared/api';
+import { usePhotoThumbs } from '@/shared/lib/hooks/use-photo-thumbs';
 import { ItemEditRow } from '@/features/category-editor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -31,43 +32,15 @@ export function SortableItemRow({
 }: SortableItemRowProps) {
   const storage = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [guideThumbs, setGuideThumbs] = useState<Record<string, string>>({});
-  const [captureThumbs, setCaptureThumbs] = useState<Record<string, string>>({});
   const [brokenLinks, setBrokenLinks] = useState<Set<string>>(new Set());
   const hasGuides = guidePhotoIds.length > 0;
   const hasCaptures = photoIds.length > 0;
   const hasImageLinks = imageLinks.length > 0;
   const allPhotoIds = [...guidePhotoIds, ...imageLinks, ...photoIds];
+  const { thumbs: guideThumbs } = usePhotoThumbs(guidePhotoIds, storage);
+  const { thumbs: captureThumbs } = usePhotoThumbs(photoIds, storage);
   const effectiveGuideThumbs = guidePhotoIds.length === 0 ? {} : guideThumbs;
   const effectiveCaptureThumbs = photoIds.length === 0 ? {} : captureThumbs;
-
-  const guidePhotosKey = guidePhotoIds.join(',');
-  useEffect(() => {
-    if (guidePhotoIds.length === 0) return;
-    let cancelled = false;
-    (async () => {
-      const map: Record<string, string> = {};
-      for (const pid of guidePhotoIds) {
-        try { const p = await storage.getPhoto(pid); if (p && !cancelled) map[pid] = p.dataUrl; } catch { /* ignore */ }
-      }
-      if (!cancelled) setGuideThumbs(map);
-    })();
-    return () => { cancelled = true; };
-  }, [guidePhotosKey, storage]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const captureIdsKey = photoIds.join(',');
-  useEffect(() => {
-    if (photoIds.length === 0) return;
-    let cancelled = false;
-    (async () => {
-      const map: Record<string, string> = {};
-      for (const pid of photoIds) {
-        try { const p = await storage.getPhoto(pid); if (p && !cancelled) map[pid] = p.dataUrl; } catch { /* ignore */ }
-      }
-      if (!cancelled) setCaptureThumbs(map);
-    })();
-    return () => { cancelled = true; };
-  }, [captureIdsKey, storage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
