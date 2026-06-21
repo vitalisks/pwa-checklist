@@ -1,13 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
-import {
-  type UniqueIdentifier,
-  type DragStartEvent,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
 import { generateUUID, compressImage } from '@/shared/lib';
 import { useStorage } from '@/shared/api';
 import type { EditCategoryData, EditItemData, EditorHandlers } from './types';
+import { useDndState } from './use-dnd-state';
 
 export interface UseEditorStateOptions {
   initialCategories: EditCategoryData[];
@@ -48,8 +43,6 @@ export function useEditorState({
     return m;
   });
   const [showValidation, setShowValidation] = useState(false);
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [activeType, setActiveType] = useState<'category' | 'item' | null>(null);
   const [unwrapPendingId, setUnwrapPendingId] = useState<string | null>(null);
   const [showUnwrapConfirm, setShowUnwrapConfirm] = useState(false);
 
@@ -125,99 +118,11 @@ export function useEditorState({
     ));
   }, [storage]);
 
+  const { handleDragStart, handleDragEnd } = useDndState(categories, setCategories);
+
   const commit = useCallback((newCategories: EditCategoryData[]) => {
     setCategories(newCategories);
   }, []);
-
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const { id } = event.active;
-    setActiveId(id);
-    setActiveType(categories.some(cat => cat.id === id) ? 'category' : 'item');
-  }, [categories]);
-
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-    setActiveType(null);
-
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    const activeCategory = categories.find(cat => cat.id === activeId);
-    if (activeCategory) {
-      if (activeId !== overId) {
-        setCategories(prev => {
-          const oldIndex = prev.findIndex(c => c.id === activeId);
-          const newIndex = prev.findIndex(c => c.id === overId);
-          if (oldIndex !== -1 && newIndex !== -1) return arrayMove(prev, oldIndex, newIndex);
-          return prev;
-        });
-      }
-      return;
-    }
-
-    const activeItemCategory = categories.find(cat => cat.items.some(item => item.id === activeId));
-    if (!activeItemCategory) return;
-    const activeItem = activeItemCategory.items.find(i => i.id === activeId);
-    if (!activeItem) return;
-
-    const sourceCategoryId = activeItemCategory.id;
-    let targetCategoryId = sourceCategoryId;
-    let targetIndex = -1;
-
-    if (categories.some(cat => cat.id === overId)) {
-      targetCategoryId = overId as string;
-      targetIndex = -1;
-    } else {
-      const targetItemCategory = categories.find(cat => cat.items.some(item => item.id === overId));
-      if (targetItemCategory) {
-        targetCategoryId = targetItemCategory.id;
-        targetIndex = targetItemCategory.items.findIndex(i => i.id === overId);
-      }
-    }
-
-    if (sourceCategoryId === targetCategoryId) {
-      if (targetIndex === -1) return;
-      setCategories(prev => prev.map(cat => {
-        if (cat.id === sourceCategoryId) {
-          const oldIndex = cat.items.findIndex(i => i.id === activeId);
-          if (oldIndex !== -1 && targetIndex !== -1 && oldIndex !== targetIndex) {
-            return { ...cat, items: arrayMove(cat.items, oldIndex, targetIndex) };
-          }
-        }
-        return cat;
-      }));
-    } else {
-      setCategories(prev => prev.map(cat => {
-        if (cat.id === sourceCategoryId) {
-          return { ...cat, items: cat.items.filter(i => i.id !== activeId) };
-        }
-        if (cat.id === targetCategoryId) {
-          const newItems = [...cat.items];
-          if (targetIndex !== -1) newItems.splice(targetIndex, 0, activeItem);
-          else newItems.push(activeItem);
-          return { ...cat, items: newItems };
-        }
-        return cat;
-      }));
-    }
-  }, [categories]);
-
-  const activeItem = useMemo(() => {
-    if (!activeId || activeType !== 'item') return null;
-    for (const cat of categories) {
-      const item = cat.items.find(i => i.id === activeId);
-      if (item) return item;
-    }
-    return null;
-  }, [activeId, activeType, categories]);
-
-  const activeCategory = useMemo(() => {
-    if (!activeId || activeType !== 'category') return null;
-    return categories.find(cat => cat.id === activeId) ?? null;
-  }, [activeId, activeType, categories]);
 
   const handlers = useMemo((): EditorHandlers => ({
     commit,
@@ -289,8 +194,6 @@ export function useEditorState({
     showUnwrapConfirm,
     confirmUnwrap,
     cancelUnwrap,
-    activeItem,
-    activeCategory,
     handlers,
     commit,
     handleDragStart,
