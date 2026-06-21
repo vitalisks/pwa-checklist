@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
-import { Camera, ImageIcon, X, GripVertical } from 'lucide-react';
+import { Camera, GripVertical } from 'lucide-react';
 import { useStorage } from '@/shared/api';
 import { usePhotoThumbs } from '@/shared/lib/hooks/use-photo-thumbs';
+import { GuidePhotoThumb, AiPhotoThumb, CapturePhotoThumb } from '@/features/manage-photos/ui/PhotoThumbs';
 import { ItemEditRow } from '@/features/category-editor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -81,58 +82,35 @@ export function SortableItemRow({
           <div className={photoStyles['photo-strip']}>
             {guidePhotoIds.map((pid, i) => (
               <div key={pid} className={photoStyles['photo-thumb-wrap']}>
-                {effectiveGuideThumbs[pid] ? (
-                  <button onClick={() => handlers.viewPhotos?.(allPhotoIds, i)}
-                    className={photoStyles['guide-photo-btn']}>
-                    <img src={effectiveGuideThumbs[pid]} alt="guide"
-                      className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`} />
-                    <span className={photoStyles['guide-badge']}>G</span>
-                  </button>
-                ) : (
-                  <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']} ${photoStyles['photo-thumb-guide']}`}>
-                    <ImageIcon size={12} />
-                  </div>
-                )}
+                <GuidePhotoThumb
+                  src={effectiveGuideThumbs[pid]}
+                  onClick={() => handlers.viewPhotos?.(allPhotoIds, i)}
+                  badgeLabel="G"
+                />
               </div>
             ))}
             {imageLinks.map((url, i) => {
               const idx = guidePhotoIds.length + i;
               return (
                 <div key={`${url}-${i}`} className={photoStyles['photo-thumb-wrap']}>
-                  {brokenLinks.has(url) ? (
-                    <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']} ${photoStyles['photo-thumb-guide']}`}>
-                      <ImageIcon size={12} />
-                    </div>
-                  ) : (
-                    <button onClick={() => handlers.viewPhotos?.(allPhotoIds, idx)}
-                      className={photoStyles['guide-photo-btn']}>
-                      <img src={url} alt="ai reference"
-                        className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`}
-                        onError={() => setBrokenLinks(prev => new Set(prev).add(url))} />
-                      <span className={photoStyles['ai-badge']}>AI</span>
-                    </button>
-                  )}
+                  <AiPhotoThumb
+                    url={url}
+                    isBroken={brokenLinks.has(url)}
+                    onClick={() => handlers.viewPhotos?.(allPhotoIds, idx)}
+                    onError={() => setBrokenLinks(prev => new Set(prev).add(url))}
+                  />
                 </div>
               );
             })}
             {photoIds.map((pid, i) => {
               const idx = guidePhotoIds.length + imageLinks.length + i;
               return (
-                <div key={pid} className={photoStyles['photo-thumb-wrap']}>
-                  {effectiveCaptureThumbs[pid] ? (
-                    <button onClick={() => handlers.viewPhotos?.(allPhotoIds, idx)}>
-                      <img src={effectiveCaptureThumbs[pid]} alt="capture" className={photoStyles['photo-thumb']} />
-                    </button>
-                  ) : (
-                    <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']}`}>
-                      <ImageIcon size={12} />
-                    </div>
-                  )}
-                  <button onClick={() => handlers.deletePhoto?.(pid)}
-                    className={photoStyles['photo-thumb-delete']}>
-                    <X size={10} />
-                  </button>
-                </div>
+                <CapturePhotoThumb
+                  key={pid}
+                  src={effectiveCaptureThumbs[pid]}
+                  onClick={() => handlers.viewPhotos?.(allPhotoIds, idx)}
+                  onDelete={() => handlers.deletePhoto?.(pid)}
+                />
               );
             })}
           </div>

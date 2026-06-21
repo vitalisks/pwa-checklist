@@ -1,11 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { Camera, Image, MessageSquarePlus } from 'lucide-react';
+import { Camera, MessageSquarePlus } from 'lucide-react';
 import type { ChecklistItem } from '@/shared/config';
 import { motion } from 'framer-motion';
 import { useStorage } from '@/shared/api';
 import { useTranslation } from '@/shared/i18n';
 import { usePhotoThumbs } from '@/shared/lib/hooks/use-photo-thumbs';
 import { PhotoList } from '@/features/manage-photos';
+import { GuidePhotoThumb, AiPhotoThumb } from '@/features/manage-photos/ui/PhotoThumbs';
 import { ItemStatusIcon } from './ItemStatusIcon';
 import { ItemDescription } from './ItemDescription';
 import { CommentInput } from './CommentInput';
@@ -136,16 +137,11 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               <div className={photoStyles['photo-strip']}>
                 {guideIds.map((pid, i) => (
                   <div key={pid} className={photoStyles['photo-thumb-wrap']}>
-                    {loadingGuides || !effectiveGuideThumbs[pid] ? (
-                      <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']} ${photoStyles['photo-thumb-guide']}`}>
-                        <Image size={12} />
-                      </div>
-                    ) : (
-                      <button onClick={() => onViewPhotos(allPhotoIds, i)} className={photoStyles['guide-photo-btn']}>
-                        <img src={effectiveGuideThumbs[pid]} alt="guide" className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`} />
-                        <span className={photoStyles['guide-badge']}>{t.item.guidePhotoBadge}</span>
-                      </button>
-                    )}
+                    <GuidePhotoThumb
+                      src={loadingGuides ? undefined : effectiveGuideThumbs[pid]}
+                      onClick={() => onViewPhotos(allPhotoIds, i)}
+                      badgeLabel={t.item.guidePhotoBadge}
+                    />
                   </div>
                 ))}
               </div>
@@ -159,17 +155,12 @@ const ChecklistItemRow: React.FC<ChecklistItemRowProps> = ({
               <div className={photoStyles['photo-strip']}>
                 {imageLinks.map((url, i) => (
                   <div key={`${url}-${i}`} className={photoStyles['photo-thumb-wrap']}>
-                    {brokenLinks.has(url) ? (
-                      <div className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-placeholder']} ${photoStyles['photo-thumb-guide']}`}>
-                        <Image size={12} />
-                      </div>
-                    ) : (
-                      <button onClick={() => onViewPhotos(allPhotoIds, guideIds.length + i)} className={photoStyles['guide-photo-btn']}>
-                        <img src={url} alt="ai reference" className={`${photoStyles['photo-thumb']} ${photoStyles['photo-thumb-guide']}`}
-                          onError={() => setBrokenLinks((prev) => new Set(prev).add(url))} />
-                        <span className={photoStyles['ai-badge']}>AI</span>
-                      </button>
-                    )}
+                    <AiPhotoThumb
+                      url={url}
+                      isBroken={brokenLinks.has(url)}
+                      onClick={() => onViewPhotos(allPhotoIds, guideIds.length + i)}
+                      onError={() => setBrokenLinks((prev) => new Set(prev).add(url))}
+                    />
                   </div>
                 ))}
               </div>
