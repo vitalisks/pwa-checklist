@@ -3,16 +3,23 @@ import { isOidcEnabled, getOidcConfig } from '../config';
 
 let userManager: UserManager | null = null;
 
-export async function getOidcUserManager(): Promise<UserManager | null> {
-  if (!isOidcEnabled()) return null;
+export function getOidcUserManager(): UserManager {
+  if (!isOidcEnabled()) {
+    throw new Error('OIDC is not enabled');
+  }
+  if (userManager) return userManager;
+  throw new Error('OIDC UserManager not initialized — call loadOidcUserManager() first');
+}
+
+export async function loadOidcUserManager(): Promise<UserManager> {
+  if (!isOidcEnabled()) throw new Error('OIDC is not enabled');
   if (userManager) return userManager;
 
   const { UserManager, WebStorageStateStore } = await import('oidc-client-ts');
   const config = getOidcConfig();
 
   if (!config.authority || !config.clientId || !config.redirectUri) {
-    console.warn('[OIDC] Missing configuration. Auth will be unavailable.');
-    return null;
+    throw new Error('OIDC is enabled but not fully configured (authority, clientId, or redirectUri missing)');
   }
 
   userManager = new UserManager({
@@ -32,8 +39,7 @@ export async function getOidcUserManager(): Promise<UserManager | null> {
 
 export async function signIn(): Promise<{ idToken: string; profile: Record<string, unknown> } | null> {
   console.log('[OIDC] Processing callback...');
-  const mgr = await getOidcUserManager();
-  if (!mgr) return null;
+  const mgr = await loadOidcUserManager();
 
   console.log('[OIDC] Calling signinRedirectCallback...');
   const user = await mgr.signinRedirectCallback();
@@ -43,8 +49,6 @@ export async function signIn(): Promise<{ idToken: string; profile: Record<strin
   }
   console.log('[OIDC] ID token obtained successfully');
 
-  // Extract claims directly from the ID token JWT (most reliable,
-  // avoids relying on userinfo endpoint which may have CORS issues).
   const profile = decodeJwtPayload(user.id_token);
   console.log('[OIDC] ID token claims:', Object.keys(profile));
 
@@ -62,21 +66,18 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
 }
 
 export async function startSignIn(): Promise<void> {
-  const mgr = await getOidcUserManager();
-  if (!mgr) return;
+  const mgr = await loadOidcUserManager();
   console.log('[OIDC] Starting sign in redirect...');
   await mgr.signinRedirect();
 }
 
 export async function signOut(): Promise<void> {
-  const mgr = await getOidcUserManager();
-  if (!mgr) return;
+  const mgr = await loadOidcUserManager();
   await mgr.removeUser();
 }
 
 export async function isCallbackPage(): Promise<boolean> {
-  const mgr = await getOidcUserManager();
-  if (!mgr) return false;
+  await loadOidcUserManager(); // validates OIDC is enabled/configured before parsing URL
   try {
     const params = new URLSearchParams(window.location.search);
     const hasState = params.has('state');

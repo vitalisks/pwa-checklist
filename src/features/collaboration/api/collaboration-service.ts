@@ -171,6 +171,7 @@ export async function removeCollaboratorFromFirestore(
   try {
     await updateDoc(doc(db, COLLECTION, checklistId), {
       collaborators: arrayRemove(deviceId),
+      updatedAt: Date.now(),
     });
     log('UPDATE', path, { removedDeviceId: deviceId.slice(0, 8), status: 'ok' }, performance.now() - start);
     return true;

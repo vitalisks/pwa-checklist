@@ -559,6 +559,14 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
       unsub();
       unsyncFunctions.current.delete(checklistId);
     }
+
+    const existing = collabCache.current.get(checklistId);
+    if (existing && existing.ownerDeviceId === deviceId) {
+      await deleteCollaborativeChecklist(checklistId);
+    } else if (existing) {
+      await removeCollaboratorFromFirestore(checklistId, deviceId);
+    }
+
     collabCache.current.delete(checklistId);
     lastWrittenAt.current.delete(checklistId);
     setCollaborativeIds((prev) => {
@@ -566,8 +574,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
       next.delete(checklistId);
       return next;
     });
-    await deleteCollaborativeChecklist(checklistId);
-  }, []);
+  }, [deviceId]);
 
   const value = useMemo(() => ({
     enabled,

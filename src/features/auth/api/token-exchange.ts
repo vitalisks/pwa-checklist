@@ -3,31 +3,23 @@ import { signInWithCustomToken as firebaseSignIn } from './firebase-auth';
 
 const BLOCKED_ALGORITHMS = new Set(['none', 'HS256', 'HS384', 'HS512']);
 
-function validateIdTokenForExchange(idToken: string): void {
+function validateTokenStructure(idToken: string): void {
   const parts = idToken.split('.');
-  if (parts.length !== 3) {
-    throw new Error('Invalid ID token: wrong number of segments');
-  }
-  let header: Record<string, unknown>;
-  try {
-    header = JSON.parse(atob(parts[0].replace(/-/g, '+').replace(/_/g, '/')));
-  } catch {
-    throw new Error('Invalid ID token: unable to decode header');
-  }
+  if (parts.length !== 3) throw new Error('Invalid ID token: wrong number of segments');
+
+  const header = JSON.parse(atob(parts[0].replace(/-/g, '+').replace(/_/g, '/')));
   if (typeof header.alg !== 'string' || BLOCKED_ALGORITHMS.has(header.alg)) {
     throw new Error(`Invalid ID token: algorithm '${header.alg}' is not allowed`);
   }
 }
 
-export async function exchangeOidcTokenForFirebase(
-  idToken: string,
-): Promise<string> {
+export async function exchangeOidcTokenForFirebase(idToken: string): Promise<string> {
   const config = getOidcConfig();
   if (!config.customTokenEndpoint) {
     throw new Error('CUSTOM_TOKEN_ENDPOINT is not configured');
   }
 
-  validateIdTokenForExchange(idToken);
+  validateTokenStructure(idToken);
 
   console.log('[Auth] Exchanging OIDC token for Firebase custom token...');
   const response = await fetch(config.customTokenEndpoint, {
@@ -61,14 +53,11 @@ export async function completeOidcSignIn(
   console.log('[Auth] Firebase sign-in successful:', firebaseUser.uid);
   console.log('[Auth] OIDC profile claims:', oidcProfile ? Object.keys(oidcProfile) : 'none');
 
-  // Firebase custom token sign-in doesn't populate profile fields.
-  // Use OIDC claims (name, email, picture) directly from the ID token.
   const displayName = (oidcProfile?.name as string) || (oidcProfile?.preferred_username as string) || firebaseUser.displayName;
   const email = (oidcProfile?.email as string) || firebaseUser.email;
   const photoURL = (oidcProfile?.picture as string) || firebaseUser.photoURL;
   console.log('[Auth] Result profile:', { displayName, email, photoURL });
 
-  // Persist OIDC profile fields to Firebase Auth so they survive refresh
   if (displayName || photoURL) {
     const { updateProfile } = await import('firebase/auth');
     await updateProfile(firebaseUser, {

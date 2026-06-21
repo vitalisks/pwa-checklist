@@ -14,7 +14,9 @@ const SignInButton: React.FC = () => {
     setLoading(true);
     try {
       await signIn();
-    } catch {
+    } catch (err) {
+      console.error('[SignIn] OIDC sign-in failed:', err);
+    } finally {
       setLoading(false);
     }
   };
