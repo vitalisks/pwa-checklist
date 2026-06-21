@@ -94,13 +94,7 @@
 }
 
 .contactRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background 0.12s var(--ease-out);
   width: 100%;
   text-align: left;
   border: none;
@@ -109,21 +103,11 @@
   font-family: inherit;
 }
 
-.contactRow:hover {
-  background: var(--surface-3);
-}
-
 .avatar {
   width: 30px;
   height: 30px;
   border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
 }
 
 .contactName {

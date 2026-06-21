@@ -110,18 +110,8 @@
 }
 
 .contactRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background 0.12s var(--ease-out);
   border: 1px solid transparent;
-}
-
-.contactRow:hover {
-  background: var(--surface-3);
 }
 
 .contactRowSelected {
@@ -152,11 +142,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 12px;
-  font-weight: 700;
   flex-shrink: 0;
   color: #fff;
   transition: background 0.15s var(--ease-out);

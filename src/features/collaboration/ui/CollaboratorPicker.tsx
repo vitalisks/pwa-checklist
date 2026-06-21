@@ -158,11 +158,11 @@ export const CollaboratorPicker: React.FC<Props> = ({ checklist, onClose }) => {
             return (
               <div
                 key={c.deviceId}
-                className={`${styles.contactRow} ${isSelected ? styles.contactRowSelected : ''} ${isExisting ? styles.contactRowDisabled : ''}`}
+                className={`contact-row ${styles.contactRow} ${isSelected ? styles.contactRowSelected : ''} ${isExisting ? styles.contactRowDisabled : ''}`}
                 onClick={() => toggleContact(c.deviceId)}
               >
                 <div
-                  className={styles.avatar}
+                  className={`avatar ${styles.avatar}`}
                   style={{ background: getAvatarColor(c.deviceId) }}
                 >
                   {getInitials(c.name)}

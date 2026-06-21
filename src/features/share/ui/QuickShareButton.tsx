@@ -40,13 +40,13 @@ const QuickShareButton: React.FC<Props> = ({ item, itemType }) => {
         {contacts.map((c) => (
           <button
             key={c.deviceId}
-            className={styles.contactRow}
+            className={`contact-row ${styles.contactRow}`}
             onClick={() => {
               setShowPicker(false);
               setSelectedContact(c);
             }}
           >
-            <div className={styles.avatar} style={{ background: getAvatarColor(c.deviceId) }}>
+            <div className={`avatar ${styles.avatar}`} style={{ background: getAvatarColor(c.deviceId) }}>
               {getInitials(c.name)}
             </div>
             <div className={styles.contactName}>{c.name}</div>

@@ -819,6 +819,30 @@ textarea.input {
     margin: 8px auto 0;
 }
 
+/* ── Avatar (shared utility, use with module-specific sizing) ── */
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* ── Contact row (shared list row for contact pickers) ── */
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s var(--ease-out);
+}
+
+.contact-row:hover {
+  background: var(--surface-3);
+}
+
 /* ── Animations ── */
 @keyframes spin {
     to {
