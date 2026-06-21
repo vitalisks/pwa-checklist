@@ -16,6 +16,8 @@ interface UseChecklistViewDialogsProps {
   stopCollaboration?: (id: string) => Promise<void>;
 }
 
+export type DialogState = ReturnType<typeof useChecklistViewDialogs>;
+
 export function useChecklistViewDialogs({
   currentChecklist,
   deleteChecklist,

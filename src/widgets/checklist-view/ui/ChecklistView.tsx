@@ -3,19 +3,15 @@ import type { Checklist, ChecklistCategory, ChecklistItem, ChecklistStatus } fro
 import { useEditorState, Toolbar, DndEditor } from '@/features/item-editor';
 import { useTranslation } from '@/shared/i18n';
 import { useChecklist } from '@/app/model/checklist-context';
-import { ConfirmDialog } from '@/shared/ui';
-import { useShare, SendShareDialog, AddContactDialog } from '@/features/share';
-import { ExportChecklistDialog } from '@/features/export-checklist';
-import { PhotoLightbox } from '@/features/manage-photos';
-import { useCollaboration, CollaboratorPicker } from '@/features/collaboration';
-import { AnimatePresence } from 'framer-motion';
+import { useShare } from '@/features/share';
+import { useCollaboration } from '@/features/collaboration';
 import { generateUUID, computeProgress } from '@/shared/lib';
 import { useChecklistViewDialogs } from './useChecklistViewDialogs';
+import { ChecklistDialogs } from './ChecklistDialogs';
 import ReadToolbar from './ReadToolbar';
 import CheckListTitleCard from './ChecklistTitleCard';
 import ReadContent from './ReadContent';
 import CompletedBanner from './CompletedBanner';
-import ShareSheet from './ShareSheet';
 
 interface ChecklistViewProps {
   checklist: Checklist;
@@ -26,7 +22,7 @@ interface ChecklistViewProps {
 }
 
 const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTemplate, defaultEdit = false, onSaveChecklist, onClose }) => {
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const { updateChecklist, toggleItem, addChecklistPhoto, deleteChecklistPhoto, addComment, deleteComment, deleteChecklist } = useChecklist();
   const collaboration = useCollaboration();
   const isCollaborative = collaboration.isCollaborative(checklist.id);
@@ -54,24 +50,24 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
   const isDraft = defaultEdit && onSaveChecklist !== undefined;
   const currentChecklist = checklist;
 
-  const {
-    showCollaboratorPicker, setShowCollaboratorPicker,
-    showSharePicker, setShowSharePicker,
-    showAddContact, setShowAddContact,
-    shareContact, setShareContact,
-    lightbox, setLightbox,
-    showDeleteConfirm, setShowDeleteConfirm,
-    showExport, setShowExport,
-    showValidation, setShowValidation,
-    showSaveAsTemplateConfirm, setShowSaveAsTemplateConfirm,
-    handleViewPhotos,
-    handleDeleteChecklist,
-  } = useChecklistViewDialogs({
+  const dialogs = useChecklistViewDialogs({
     currentChecklist,
     deleteChecklist,
     closeChecklist: onClose ?? (() => {}),
     stopCollaboration: isCollaborative ? collaboration.stopCollaboration : undefined,
   });
+
+  const {
+    showValidation,
+    lightbox, setLightbox,
+    setShowValidation,
+    setShowSaveAsTemplateConfirm,
+    setShowDeleteConfirm,
+    setShowSharePicker,
+    setShowExport,
+    setShowCollaboratorPicker,
+    handleViewPhotos,
+  } = dialogs;
 
   const editorState = useEditorState({
     initialCategories: currentChecklist.categories,
@@ -258,92 +254,14 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({ checklist, onSaveAsTempla
 
         {isCompleted && <CompletedBanner onBack={onClose ?? (() => {})} />}
 
-        <AnimatePresence>
-          {lightbox && (
-            <PhotoLightbox
-              photoIds={lightbox.photoIds}
-              startIndex={lightbox.startIndex}
-              onClose={() => setLightbox(null)}
-              onDelete={lightbox.canDelete ? handleDeletePhoto : undefined}
-            />
-          )}
-        </AnimatePresence>
-
-        {showValidation && (
-          <ConfirmDialog
-            title={t.validation.requiredTitle}
-            message={[
-              editorState.emptyTitle(titleValue) && t.validation.titleRequired,
-              editorState.emptyCatNames() && t.validation.categoryNameRequired,
-              editorState.emptyItemTexts() && t.validation.itemNameRequired,
-            ].filter(Boolean).join('\n')}
-            confirmLabel={t.common.ok}
-            variant="warning"
-            onConfirm={() => setShowValidation(false)}
-            onCancel={() => setShowValidation(false)}
-          />
-        )}
-
-        {editorState.showUnwrapConfirm && (
-          <ConfirmDialog
-            title={t.common.delete.confirmTitle}
-            message={t.checklist.unwrappedConfirm}
-            confirmLabel={t.common.ok}
-            variant="warning"
-            onConfirm={editorState.confirmUnwrap}
-            onCancel={editorState.cancelUnwrap}
-          />
-        )}
-
-        {showSaveAsTemplateConfirm && (
-          <ConfirmDialog
-            title={t.checklist.saveAsTemplate}
-            message={t.common.delete.confirm}
-            confirmLabel={t.checklist.saveAsTemplate}
-            onConfirm={handleSaveAsTemplateConfirm}
-            onCancel={() => setShowSaveAsTemplateConfirm(false)}
-          />
-        )}
-
-        {showDeleteConfirm && (
-          <ConfirmDialog
-            title={t.common.delete.confirmTitle}
-            message={t.common.delete.confirmMsg}
-            confirmLabel={t.common.delete.confirmAction}
-            onConfirm={handleDeleteChecklist}
-            onCancel={() => setShowDeleteConfirm(false)}
-          />
-        )}
-
-        {showCollaboratorPicker && (
-          <CollaboratorPicker checklist={currentChecklist} onClose={() => setShowCollaboratorPicker(false)} />
-        )}
-
-        <ShareSheet
-          isOpen={showSharePicker}
+        <ChecklistDialogs
+          currentChecklist={currentChecklist}
+          dialogs={dialogs}
+          editorState={editorState}
+          titleValue={titleValue}
           contacts={share.contacts}
-          onSend={(c) => { setShowSharePicker(false); setShareContact(c); }}
-          onAddContact={() => { setShowSharePicker(false); setShowAddContact(true); }}
-          onClose={() => setShowSharePicker(false)}
-        />
-
-        {shareContact && (
-          <SendShareDialog
-            contact={shareContact}
-            item={currentChecklist}
-            itemType="checklist"
-            onClose={() => setShareContact(null)}
-          />
-        )}
-
-        {showAddContact && (
-          <AddContactDialog onClose={() => setShowAddContact(false)} />
-        )}
-
-        <ExportChecklistDialog
-          checklist={currentChecklist}
-          isOpen={showExport}
-          onClose={() => setShowExport(false)}
+          handleSaveAsTemplateConfirm={handleSaveAsTemplateConfirm}
+          handleDeletePhoto={handleDeletePhoto}
         />
       </div>
     </>
