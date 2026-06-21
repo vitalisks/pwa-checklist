@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useTranslation } from '@/shared/i18n';
 import { useShare } from '../model';
-import { DialogPortal } from '@/shared/ui';
+import { BottomSheet } from '@/shared/ui';
 import { getAvatarColor, getInitials } from '@/shared/lib';
 import type { Contact, Template, Checklist } from '@/shared/config';
-import { X, Send, Check, FileText, ClipboardList, Image, AlertCircle, Loader } from 'lucide-react';
+import { Send, Check, FileText, ClipboardList, Image, AlertCircle, Loader } from 'lucide-react';
 import { compressDataUrl, estimateBase64Size } from '@/shared/lib/image/compressImage';
 import { PhotoRepository } from '@/entities/photo';
 import { useStorage } from '@/shared/api';
@@ -169,137 +169,108 @@ const SendShareDialog: React.FC<Props> = ({ contact, item, itemType, onClose }) 
     !photosState.tooLargeError &&
     (photosState.entries.length === 0 || photosState.selectedIds.size > 0);
 
+  const sheetTitle = <>{t.share.sendTo} <span className={styles.titleHighlight}>{contact.name}</span></>;
+
+  const sheetFooter = done ? (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={styles.successState}
+    >
+      <Check size={18} className={styles.successIcon} />
+      {t.share.sentSuccess}
+    </motion.div>
+  ) : (
+    <>
+      <button onClick={onClose} className={styles.cancelBtn}>
+        {t.common.cancel}
+      </button>
+      <button
+        onClick={handleSend}
+        disabled={sending || !canSend}
+        className={styles.sendBtn}
+      >
+        {sending ? (
+          <div className={styles.spinner} />
+        ) : (
+          <>
+            <Send size={14} />
+            {t.share.send}
+          </>
+        )}
+      </button>
+    </>
+  );
+
   return (
-    <DialogPortal>
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className={styles.overlay}
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '30%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 400, mass: 0.8 }}
-            className={styles.sheet}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.handle} />
+    <BottomSheet isOpen onClose={onClose} title={sheetTitle} footer={sheetFooter}>
+      <div className={styles.body}>
+        <div className={styles.recipientRow}>
+          <div className={styles.avatar} style={{ background: getAvatarColor(contact.deviceId) }}>
+            {getInitials(contact.name)}
+          </div>
+          <div>
+            <div className={styles.recipientName}>{contact.name}</div>
+            <div className={styles.recipientLabel}>{contact.deviceId.slice(0, 8)}</div>
+          </div>
+        </div>
 
-            <div className={styles.header}>
-              <span className={styles.title}>
-                {t.share.sendTo} <span className={styles.titleHighlight}>{contact.name}</span>
-              </span>
-              <button onClick={onClose} className={styles.closeBtn}>
-                <X size={14} />
-              </button>
+        <div className={styles.itemPreview}>
+          <div className={`${styles.itemIcon} ${itemType === 'template' ? styles.itemIconTemplate : styles.itemIconChecklist}`}>
+            {itemType === 'template' ? <FileText size={18} /> : <ClipboardList size={18} />}
+          </div>
+          <div className={styles.itemInfo}>
+            <div className={styles.itemTitle}>{title}</div>
+            <div className={`${styles.itemType} ${itemType === 'template' ? styles.itemTypeTemplate : styles.itemTypeChecklist}`}>
+              {itemType === 'template' ? t.templates.title : t.nav.home}
             </div>
+          </div>
+        </div>
 
-            <div className={styles.body}>
-              <div className={styles.recipientRow}>
-                <div className={styles.avatar} style={{ background: getAvatarColor(contact.deviceId) }}>
-                  {getInitials(contact.name)}
-                </div>
-                <div>
-                  <div className={styles.recipientName}>{contact.name}</div>
-                  <div className={styles.recipientLabel}>{contact.deviceId.slice(0, 8)}</div>
-                </div>
-              </div>
+        {photosState.loading && (
+          <div className={styles.photosLoading}>
+            <Loader size={16} className={styles.loadingSpinner} />
+            <span>{t.share.loadingPhotos}</span>
+          </div>
+        )}
 
-              <div className={styles.itemPreview}>
-                <div className={`${styles.itemIcon} ${itemType === 'template' ? styles.itemIconTemplate : styles.itemIconChecklist}`}>
-                  {itemType === 'template' ? <FileText size={18} /> : <ClipboardList size={18} />}
-                </div>
-                <div className={styles.itemInfo}>
-                  <div className={styles.itemTitle}>{title}</div>
-                  <div className={`${styles.itemType} ${itemType === 'template' ? styles.itemTypeTemplate : styles.itemTypeChecklist}`}>
-                    {itemType === 'template' ? t.templates.title : t.nav.home}
-                  </div>
-                </div>
-              </div>
-
-              {photosState.loading && (
-                <div className={styles.photosLoading}>
-                  <Loader size={16} className={styles.loadingSpinner} />
-                  <span>{t.share.loadingPhotos}</span>
-                </div>
-              )}
-
-              {!photosState.loading && photosState.entries.length > 0 && (
-                <div className={styles.photosSection}>
-                  <div className={styles.photosSectionHeader}>
-                    <Image size={12} />
-                    <span>{t.share.photos} ({photosState.selectedIds.size}/{photosState.entries.length})</span>
-                    <span className={styles.totalSize}>{totalSizeKb}KB</span>
-                  </div>
-                  <div className={styles.photosGrid}>
-                    {photosState.entries.map((entry) => (
-                      <button
-                        key={entry.id}
-                        className={`${styles.photoThumb} ${entry.tooLarge ? styles.photoThumbTooLarge : ''} ${!photosState.selectedIds.has(entry.id) ? styles.photoThumbDeselected : ''}`}
-                        onClick={() => togglePhoto(entry.id)}
-                        title={entry.id}
-                      >
-                        <img src={entry.dataUrl} alt="" />
-                        <span className={`${styles.photoSize} ${entry.tooLarge ? styles.photoSizeDanger : entry.sizeKb > 100 ? styles.photoSizeWarning : styles.photoSizeOk}`}>
-                          {entry.sizeKb}KB
-                        </span>
-                        {!photosState.selectedIds.has(entry.id) && (
-                          <span className={styles.photoDimmed} />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  {photosState.tooLargeError && (
-                    <div className={styles.photoError}>
-                      <AlertCircle size={12} />
-                      <span>{photosState.tooLargeError}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {sendError && <div className={styles.error}>{sendError}</div>}
+        {!photosState.loading && photosState.entries.length > 0 && (
+          <div className={styles.photosSection}>
+            <div className={styles.photosSectionHeader}>
+              <Image size={12} />
+              <span>{t.share.photos} ({photosState.selectedIds.size}/{photosState.entries.length})</span>
+              <span className={styles.totalSize}>{totalSizeKb}KB</span>
             </div>
-
-            {done ? (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={styles.successState}
-              >
-                <Check size={18} className={styles.successIcon} />
-                {t.share.sentSuccess}
-              </motion.div>
-            ) : (
-              <div className={styles.footer}>
-                <button onClick={onClose} className={styles.cancelBtn}>
-                  {t.common.cancel}
-                </button>
+            <div className={styles.photosGrid}>
+              {photosState.entries.map((entry) => (
                 <button
-                  onClick={handleSend}
-                  disabled={sending || !canSend}
-                  className={styles.sendBtn}
+                  key={entry.id}
+                  className={`${styles.photoThumb} ${entry.tooLarge ? styles.photoThumbTooLarge : ''} ${!photosState.selectedIds.has(entry.id) ? styles.photoThumbDeselected : ''}`}
+                  onClick={() => togglePhoto(entry.id)}
+                  title={entry.id}
                 >
-                  {sending ? (
-                    <div className={styles.spinner} />
-                  ) : (
-                    <>
-                      <Send size={14} />
-                      {t.share.send}
-                    </>
+                  <img src={entry.dataUrl} alt="" />
+                  <span className={`${styles.photoSize} ${entry.tooLarge ? styles.photoSizeDanger : entry.sizeKb > 100 ? styles.photoSizeWarning : styles.photoSizeOk}`}>
+                    {entry.sizeKb}KB
+                  </span>
+                  {!photosState.selectedIds.has(entry.id) && (
+                    <span className={styles.photoDimmed} />
                   )}
                 </button>
+              ))}
+            </div>
+            {photosState.tooLargeError && (
+              <div className={styles.photoError}>
+                <AlertCircle size={12} />
+                <span>{photosState.tooLargeError}</span>
               </div>
             )}
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
-    </DialogPortal>
+          </div>
+        )}
+
+        {sendError && <div className={styles.error}>{sendError}</div>}
+      </div>
+    </BottomSheet>
   );
 };
 

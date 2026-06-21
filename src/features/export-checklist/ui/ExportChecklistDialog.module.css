@@ -135,10 +135,6 @@
   margin: 0 auto 10px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .successIcon {
   color: var(--accent);
   margin: 0 auto 10px;
