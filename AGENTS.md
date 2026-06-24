@@ -111,7 +111,31 @@ The shared `DndEditor` component from `features/item-editor` encapsulates the Dn
 
 **ChecklistItemRow description clamping**: Descriptions longer than 3 lines are clamped with a "See more" toggle. Uses `useLayoutEffect` + `scrollHeight > clientHeight` to detect overflow.
 
-### 4.8. Compatibility
+### 4.9. Authentication (OIDC + Firebase Auth)
+
+Optional OIDC sign-in layer that protects shared/collaborative documents. Requires `VITE_FIREBASE_ENABLED=true`.
+
+**Environment flags** (`VITE_OIDC_ENABLED=true` to activate):
+- `VITE_OIDC_AUTHORITY` — OIDC issuer URL
+- `VITE_OIDC_CLIENT_ID` — OIDC client ID
+- `VITE_OIDC_SCOPE` — defaults to `openid profile email`
+- `VITE_OIDC_REDIRECT_URI` — must end in `/auth/callback`
+- `VITE_CUSTOM_TOKEN_ENDPOINT` — serverless endpoint that accepts `POST {"idToken"}` and returns `{"customToken"}`
+
+**Architecture** (all in `src/features/auth/`):
+- `config/index.ts` — `isOidcEnabled()`, `isOidcConfigured()`, `getOidcConfig()`
+- `api/oidc-client.ts` — wraps `oidc-client-ts` `UserManager` (auth code flow, `sessionStorage`, `automaticSilentRenew: true`). Exports `startSignIn()`, `signIn()` (callback), `signOut()`, `isCallbackPage()`. Lazy-loaded.
+- `api/token-exchange.ts` — `exchangeOidcTokenForFirebase(idToken)`: validates JWT structure (rejects `none`/`HS256`/`HS384`/`HS512`), POSTs to custom token endpoint, returns Firebase custom token. `completeOidcSignIn(idToken, profile)`: exchanges + signs in via Firebase custom token, syncs OIDC `name`/`email`/`picture` to Firebase user profile.
+- `api/firebase-auth.ts` — lazy initializer for Firebase Auth (`getAuth` from same `firebaseApp` used by sharing). Exports `signInWithCustomToken()`, `signOutFirebase()`.
+- `model/auth-context.tsx` — `AuthProvider` + `useAuth()` hook. Exposes `{ enabled, configured, authState, isAuthenticated, signIn, signOut, getIdToken }`. Wraps inside `ShareProvider` in `app/index.tsx`.
+- `ui/AuthCallback.tsx` — renders "Signing in..." on `/auth/callback` (route added conditionally in `routes.tsx`). Has a 15s safety redirect to `/settings`.
+- `ui/SignInButton.tsx`, `UserMenu.tsx`, `AuthSettings.tsx` — rendered only when `isOidcConfigured()`.
+
+**Auth flow**: User clicks Sign In → redirect to OIDC provider → callback to `/auth/callback` → `signinRedirectCallback()` extracts ID token → `exchangeOidcTokenForFirebase()` POSTs token to backend → Firebase `signInWithCustomToken()` → `writeDeviceUidMapping()` links device ID to UID in Firestore.
+
+**No route protection** — all routes are accessible without auth. Auth is purely additive. The `CollaboratorPicker` uses `useAuth()` to enable a public/private toggle; private mode writes `ownerUid`/`allowedUids` to Firestore, enforcing access control via security rules.
+
+### 4.10. Compatibility
 * **UUID Generation**: Always use `generateUUID()` from `@/shared/lib` instead of `crypto.randomUUID()` directly to support older browsers (Safari).
 
 ## 5. Verifying Changes (lint + typecheck)

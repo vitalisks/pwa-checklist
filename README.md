@@ -86,6 +86,25 @@ To enable sharing checklists and templates between devices, you'll need a Fireba
 
 Once set, the app will show a "My Code" section in Settings and a share icon on every template/checklist card. All data stays in the `shared_payloads` collection with a 24h TTL — no user accounts needed.
 
+### Optional: OIDC Authentication (Sign-In)
+
+OIDC authentication protects shared/collaborative documents behind a sign-in wall. It requires Firebase to be enabled (the OIDC ID token is exchanged for a Firebase custom token).
+
+1. Set up an **OIDC provider** (e.g., Cloudflare Workers, Auth0, Keycloak) that issues ID tokens.
+2. Configure a **token exchange endpoint** (a serverless function) that accepts the OIDC ID token and returns a Firebase custom token. The endpoint receives `POST {"idToken": "<oidc_id_token>"}` and responds with `{"customToken": "<firebase_custom_token>"}`.
+3. Add these env vars to your `.env`:
+
+   ```env
+   VITE_OIDC_ENABLED=true
+   VITE_OIDC_AUTHORITY=https://your-oidc-issuer
+   VITE_OIDC_CLIENT_ID=your-client-id
+   VITE_OIDC_SCOPE=openid profile email
+   VITE_OIDC_REDIRECT_URI=https://your-app.com/auth/callback
+   VITE_CUSTOM_TOKEN_ENDPOINT=https://your-token-exchange-endpoint
+   ```
+
+The sign-in flow: user clicks Sign In → redirect to OIDC provider → callback to `/auth/callback` → ID token exchanged for Firebase custom token → user signed in to Firebase. OIDC profile claims (`name`, `email`, `picture`) are synced to the Firebase user profile.
+
 ## 🌍 Language Support
 
 Moirai automatically detects your browser's language. You can also manually switch languages in the **Settings** tab.
