@@ -58,7 +58,7 @@ export interface ChecklistCategory {
   unwrapped?: boolean;
 }
 
-export type ChecklistStatus = 'active' | 'completed';
+export type ChecklistStatus = "active" | "completed";
 
 export interface Checklist {
   id: string;
@@ -102,7 +102,7 @@ export interface CollaborativeCategory {
   unwrapped?: boolean;
 }
 
-export interface CollaborativeChecklist {
+export interface CollaborativeChecklist extends Record<string, unknown> {
   id: string;
   title: string;
   status: ChecklistStatus;

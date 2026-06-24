@@ -802,11 +802,13 @@ textarea.input {
     align-items: flex-end;
     justify-content: center;
     background: rgba(0, 0, 0, 0.6);
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
 }
 
 @media (min-width: 480px) {
     .overlay-bottom {
         align-items: center;
+        padding-bottom: 0;
     }
 }
 

@@ -169,13 +169,6 @@
   margin-top: 8px;
 }
 
-.footer {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px 16px;
-  border-top: 1px solid var(--border-subtle);
-}
-
 .footerBtn {
   flex: 1;
   display: inline-flex;

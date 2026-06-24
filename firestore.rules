@@ -10,7 +10,7 @@ service cloud.firestore {
 
     function isAllowed() {
       return request.auth != null
-        && resource.data.allowedUids != null
+        && isNullValue(resource, 'allowedUids')
         && resource.data.allowedUids.hasAny([request.auth.uid]);
     }
 
@@ -19,6 +19,10 @@ service cloud.firestore {
     // becomes private and only the owner or allowedUids can access it.
     function isPublic() {
       return !resource.data.keys().hasAny(['ownerUid']);
+    }
+
+    function isNullValue(request, key) {
+        return !request.resource.data.keys().hasAny([key]);
     }
 
     // ── Inbox (shared_payloads) ────────────────────────────────────
@@ -65,10 +69,10 @@ service cloud.firestore {
       allow create: if request.resource.data.keys().hasAll(['ownerDeviceId', 'collaborators'])
         && request.resource.data.collaborators is list
         && request.resource.data.collaborators.size() >= 1
-        && (request.resource.data.ownerUid == null
+        && (isNullValue(request, 'ownerUid')
             || request.resource.data.ownerUid == request.auth.uid)
-        && (request.resource.data.allowedUids == null
-            || (request.resource.data.ownerUid != null
+        && (isNullValue(request, 'allowedUids')
+            || (request.resource.data.ownerUid
                 && request.resource.data.allowedUids.hasAll([request.resource.data.ownerUid])));
 
       // Update: field-level immutability for ownerUid and allowedUids.
@@ -78,10 +82,10 @@ service cloud.firestore {
       allow update: if isPublic() || (
         isOwner() && resource.data.ownerUid == request.auth.uid && (
           // Prevent any write that introduces or changes ownerUid (once set, immutable)
-          (request.resource.data.ownerUid == null || request.resource.data.ownerUid == resource.data.ownerUid)
+          (isNullValue(request, 'ownerUid') || request.resource.data.ownerUid == resource.data.ownerUid)
           &&
           // Prevent any write that introduces or changes allowedUids (once set, immutable)
-          (request.resource.data.allowedUids == null || request.resource.data.allowedUids == resource.data.allowedUids)
+          (isNullValue(request, 'allowedUids') || request.resource.data.allowedUids == resource.data.allowedUids)
         )
       ) || isAllowed();
 
